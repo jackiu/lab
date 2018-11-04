@@ -2,7 +2,7 @@
 global:
   owner: jackiu@me.com
   qsname: mb-project
-  s3bucket: taskcat-sample-taskcat-project-a1c14bc9
+  s3bucket: taskcat-bucket
   regions:
     - ap-northeast-1
     - ap-northeast-2
