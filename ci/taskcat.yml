@@ -1,7 +1,7 @@
 ---
 global:
   owner: jackiu@me.com
-  qsname: mb-project
+  qsname: lab
   s3bucket: taskcat-bucket
   regions:
     - ap-northeast-1
