@@ -1,0 +1,37 @@
+{
+    "AWSTemplateFormatVersion": "2010-09-09",
+    "Description": "Networking fundation",
+    "Parameters": {
+        "pVPCCIDR": {
+            "Description": "VPC",
+            "Type": "String",
+            "Default": "10.0.0.0/16"
+        },
+        "pCreatedBy": {
+            "Description": "CreateByTag",
+            "Type": "String",
+            "Default": "CF"
+        }
+    },
+    "Resources": {
+        "rVPC": {
+            "Type": "AWS::EC2::VPC",
+            "Properties": {
+                "CidrBlock": {
+                    "Ref": "pVPCCIDR"
+                },
+                "Tags": [
+                    {
+                        "Key": "Name",
+                        "Value": "VPC"
+                    },
+                    {
+                        "Key": "CreatedBy",
+                        "Value": {"Ref" : "pCreatedBy"}
+                    }
+                ]
+            }
+        }
+    },
+    "Outputs": {}
+}
