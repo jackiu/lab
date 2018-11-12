@@ -22,7 +22,7 @@
                 },
                 "Tags": [
                     {
-                        "key": "Name",
+                        "Key": "Name",
                         "Value": "VPC"
                     },
                     {
