@@ -20,4 +20,4 @@ tests:
     parameter_input: debug-networking.json
     regions:
       - us-east-1
-    template_file: networking.template
+    template_file: networking.json

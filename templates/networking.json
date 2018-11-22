@@ -1,37 +1,464 @@
 {
     "AWSTemplateFormatVersion": "2010-09-09",
-    "Description": "Networking fundation",
-    "Parameters": {
-        "pVPCCIDR": {
-            "Description": "VPC",
-            "Type": "String",
-            "Default": "10.0.0.0/16"
-        },
-        "pCreatedBy": {
-            "Description": "CreateByTag",
-            "Type": "String",
-            "Default": "CF"
-        }
-    },
+    "Description": "AWS CloudFormation BLAH **WARNING** This template creates an Amazon EC2 instance. You will be billed for the AWS resources used if you create a stack from this template.",
     "Resources": {
-        "rVPC": {
-            "Type": "AWS::EC2::VPC",
+        "IGW": {
+            "Type": "AWS::EC2::InternetGateway"
+        },
+        "IGWAttachement": {
             "Properties": {
-                "CidrBlock": {
-                    "Ref": "pVPCCIDR"
+                "InternetGatewayId": {
+                    "Ref": "IGW"
+                },
+                "VpcId": {
+                    "Ref": "VPC"
+                }
+            },
+            "Type": "AWS::EC2::VPCGatewayAttachment"
+        },
+        "NAT1": {
+            "Properties": {
+                "AllocationId": {
+                    "Fn::GetAtt": [
+                        "NatEIP1",
+                        "AllocationId"
+                    ]
+                },
+                "SubnetId": {
+                    "Ref": "Subnet1"
                 },
                 "Tags": [
-                    {
-                        "key": "Name",
-                        "Value": "VPC"
-                    },
-                    {
-                        "Key": "CreatedBy",
-                        "Value": {"Ref" : "pCreatedBy"}
-                    }
+                    [
+                        {
+                            "Key": "Application",
+                            "Value": {
+                                "Ref": "AWS::StackName"
+                            }
+                        }
+                    ]
                 ]
-            }
+            },
+            "Type": "AWS::EC2::NatGateway"
+        },
+        "NAT2": {
+            "Properties": {
+                "AllocationId": {
+                    "Fn::GetAtt": [
+                        "NatEIP2",
+                        "AllocationId"
+                    ]
+                },
+                "SubnetId": {
+                    "Ref": "Subnet2"
+                },
+                "Tags": [
+                    [
+                        {
+                            "Key": "Application",
+                            "Value": {
+                                "Ref": "AWS::StackName"
+                            }
+                        }
+                    ]
+                ]
+            },
+            "Type": "AWS::EC2::NatGateway"
+        },
+        "NatEIP1": {
+            "Properties": {
+                "Domain": "vpc"
+            },
+            "Type": "AWS::EC2::EIP"
+        },
+        "NatEIP2": {
+            "Properties": {
+                "Domain": "vpc"
+            },
+            "Type": "AWS::EC2::EIP"
+        },
+        "PrivateRoute1": {
+            "Properties": {
+                "DestinationCidrBlock": "0.0.0.0/0",
+                "GatewayId": {
+                    "Ref": "NAT1"
+                },
+                "RouteTableId": {
+                    "Ref": "PrivateRouteTable"
+                }
+            },
+            "Type": "AWS::EC2::Route"
+        },
+        "PrivateRoute2": {
+            "Properties": {
+                "DestinationCidrBlock": "0.0.0.0/0",
+                "GatewayId": {
+                    "Ref": "NAT2"
+                },
+                "RouteTableId": {
+                    "Ref": "PrivateRouteTable"
+                }
+            },
+            "Type": "AWS::EC2::Route"
+        },
+        "PubRouteTableAsso1": {
+            "Properties": {
+                "RouteTableId": {
+                    "Ref": "PublicRouteTable"
+                },
+                "SubnetId": {
+                    "Ref": "Subnet1"
+                }
+            },
+            "Type": "AWS::EC2::SubnetRouteTableAssociation"
+        },
+        "PubRouteTableAsso2": {
+            "Properties": {
+                "RouteTableId": {
+                    "Ref": "PublicRouteTable"
+                },
+                "SubnetId": {
+                    "Ref": "Subnet2"
+                }
+            },
+            "Type": "AWS::EC2::SubnetRouteTableAssociation"
+        },
+        "PubRouteTableAsso3": {
+            "Properties": {
+                "RouteTableId": {
+                    "Ref": "PrivateRoute1"
+                },
+                "SubnetId": {
+                    "Ref": "Subnet3"
+                }
+            },
+            "Type": "AWS::EC2::SubnetRouteTableAssociation"
+        },
+        "PubRouteTableAsso4": {
+            "Properties": {
+                "RouteTableId": {
+                    "Ref": "PrivateRoute2"
+                },
+                "SubnetId": {
+                    "Ref": "Subnet4"
+                }
+            },
+            "Type": "AWS::EC2::SubnetRouteTableAssociation"
+        },
+        "PubRouteTableAsso5": {
+            "Properties": {
+                "RouteTableId": {
+                    "Ref": "PrivateRoute1"
+                },
+                "SubnetId": {
+                    "Ref": "Subnet5"
+                }
+            },
+            "Type": "AWS::EC2::SubnetRouteTableAssociation"
+        },
+        "PubRouteTableAsso6": {
+            "Properties": {
+                "RouteTableId": {
+                    "Ref": "PrivateRoute2"
+                },
+                "SubnetId": {
+                    "Ref": "Subnet6"
+                }
+            },
+            "Type": "AWS::EC2::SubnetRouteTableAssociation"
+        },
+        "PubRouteTableAsso7": {
+            "Properties": {
+                "RouteTableId": {
+                    "Ref": "PrivateRoute1"
+                },
+                "SubnetId": {
+                    "Ref": "Subnet7"
+                }
+            },
+            "Type": "AWS::EC2::SubnetRouteTableAssociation"
+        },
+        "PubRouteTableAsso8": {
+            "Properties": {
+                "RouteTableId": {
+                    "Ref": "PrivateRoute2"
+                },
+                "SubnetId": {
+                    "Ref": "Subnet8"
+                }
+            },
+            "Type": "AWS::EC2::SubnetRouteTableAssociation"
+        },
+        "PublicRouteTable": {
+            "Properties": {
+                "Tags": [
+                    [
+                        {
+                            "Key": "Application",
+                            "Value": {
+                                "Ref": "AWS::StackName"
+                            }
+                        }
+                    ]
+                ],
+                "VpcId": {
+                    "Ref": "VPC"
+                }
+            },
+            "Type": "AWS::EC2::RouteTable"
+        },
+        "Subnet1": {
+            "Properties": {
+                "AvailabilityZone": {
+                    "Fn::Select": [
+                        0,
+                        {
+                            "Fn::GetAZs": ""
+                        }
+                    ]
+                },
+                "CidrBlock": "192.1681.0/24",
+                "Tags": [
+                    [
+                        {
+                            "Key": "Application",
+                            "Value": {
+                                "Ref": "AWS::StackName"
+                            }
+                        },
+                        {
+                            "Key": "Name",
+                            "Value": "DMZ Tier Subnet 1"
+                        }
+                    ]
+                ],
+                "VpcId": {
+                    "Ref": "VPC"
+                }
+            },
+            "Type": "AWS::EC2::Subnet"
+        },
+        "Subnet2": {
+            "Properties": {
+                "AvailabilityZone": {
+                    "Fn::Select": [
+                        1,
+                        {
+                            "Fn::GetAZs": ""
+                        }
+                    ]
+                },
+                "CidrBlock": "192.1682.0/24",
+                "Tags": [
+                    [
+                        {
+                            "Key": "Application",
+                            "Value": {
+                                "Ref": "AWS::StackName"
+                            }
+                        },
+                        {
+                            "Key": "Name",
+                            "Value": "DMZ Tier Subnet 2"
+                        }
+                    ]
+                ],
+                "VpcId": {
+                    "Ref": "VPC"
+                }
+            },
+            "Type": "AWS::EC2::Subnet"
+        },
+        "Subnet3": {
+            "Properties": {
+                "AvailabilityZone": {
+                    "Fn::Select": [
+                        0,
+                        {
+                            "Fn::GetAZs": ""
+                        }
+                    ]
+                },
+                "CidrBlock": "192.1683.0/24",
+                "Tags": [
+                    [
+                        {
+                            "Key": "Application",
+                            "Value": {
+                                "Ref": "AWS::StackName"
+                            }
+                        },
+                        {
+                            "Key": "Name",
+                            "Value": "Web Tier Subnet 1"
+                        }
+                    ]
+                ],
+                "VpcId": {
+                    "Ref": "VPC"
+                }
+            },
+            "Type": "AWS::EC2::Subnet"
+        },
+        "Subnet4": {
+            "Properties": {
+                "AvailabilityZone": {
+                    "Fn::Select": [
+                        1,
+                        {
+                            "Fn::GetAZs": ""
+                        }
+                    ]
+                },
+                "CidrBlock": "192.1684.0/24",
+                "Tags": [
+                    [
+                        {
+                            "Key": "Application",
+                            "Value": {
+                                "Ref": "AWS::StackName"
+                            }
+                        },
+                        {
+                            "Key": "Name",
+                            "Value": "Web Tier Subnet 2"
+                        }
+                    ]
+                ],
+                "VpcId": {
+                    "Ref": "VPC"
+                }
+            },
+            "Type": "AWS::EC2::Subnet"
+        },
+        "Subnet5": {
+            "Properties": {
+                "AvailabilityZone": {
+                    "Fn::Select": [
+                        0,
+                        {
+                            "Fn::GetAZs": ""
+                        }
+                    ]
+                },
+                "CidrBlock": "192.1685.0/24",
+                "Tags": [
+                    [
+                        {
+                            "Key": "Application",
+                            "Value": {
+                                "Ref": "AWS::StackName"
+                            }
+                        },
+                        {
+                            "Key": "Name",
+                            "Value": "App Tier Subnet 1"
+                        }
+                    ]
+                ],
+                "VpcId": {
+                    "Ref": "VPC"
+                }
+            },
+            "Type": "AWS::EC2::Subnet"
+        },
+        "Subnet6": {
+            "Properties": {
+                "AvailabilityZone": {
+                    "Fn::Select": [
+                        1,
+                        {
+                            "Fn::GetAZs": ""
+                        }
+                    ]
+                },
+                "CidrBlock": "192.1686.0/24",
+                "Tags": [
+                    [
+                        {
+                            "Key": "Application",
+                            "Value": {
+                                "Ref": "AWS::StackName"
+                            }
+                        },
+                        {
+                            "Key": "Name",
+                            "Value": "App Tier Subnet 2"
+                        }
+                    ]
+                ],
+                "VpcId": {
+                    "Ref": "VPC"
+                }
+            },
+            "Type": "AWS::EC2::Subnet"
+        },
+        "Subnet7": {
+            "Properties": {
+                "AvailabilityZone": {
+                    "Fn::Select": [
+                        0,
+                        {
+                            "Fn::GetAZs": ""
+                        }
+                    ]
+                },
+                "CidrBlock": "192.1687.0/24",
+                "Tags": [
+                    [
+                        {
+                            "Key": "Application",
+                            "Value": {
+                                "Ref": "AWS::StackName"
+                            }
+                        },
+                        {
+                            "Key": "Name",
+                            "Value": "DB Tier Subnet 1"
+                        }
+                    ]
+                ],
+                "VpcId": {
+                    "Ref": "VPC"
+                }
+            },
+            "Type": "AWS::EC2::Subnet"
+        },
+        "Subnet8": {
+            "Properties": {
+                "AvailabilityZone": {
+                    "Fn::Select": [
+                        1,
+                        {
+                            "Fn::GetAZs": ""
+                        }
+                    ]
+                },
+                "CidrBlock": "192.1688.0/24",
+                "Tags": [
+                    [
+                        {
+                            "Key": "Application",
+                            "Value": {
+                                "Ref": "AWS::StackName"
+                            }
+                        },
+                        {
+                            "Key": "Name",
+                            "Value": "DB Tier Subnet 2"
+                        }
+                    ]
+                ],
+                "VpcId": {
+                    "Ref": "VPC"
+                }
+            },
+            "Type": "AWS::EC2::Subnet"
+        },
+        "VPC": {
+            "Properties": {
+                "CidrBlock": "192.168.0.0/16"
+            },
+            "Type": "AWS::EC2::VPC"
         }
-    },
-    "Outputs": {}
+    }
 }
