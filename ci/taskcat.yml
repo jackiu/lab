@@ -17,7 +17,7 @@ global:
   reporting: true
 tests:
   taskcat-json:
-    parameter_input: debug-networking.json
+    # parameter_input: debug-networking.json
     regions:
       - us-east-1
     template_file: networking.json

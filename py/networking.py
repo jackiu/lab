@@ -13,7 +13,8 @@ subnetCIDR = []
 for i in range(1, 9):
     subnetCIDR.append( cidrPrefix + str(i) + ".0/24" )
 
-subnetNames = ["DMZ Tier Subnet 1", "DMZ Tier Subnet 2", "Web Tier Subnet 1", "Web Tier Subnet 2", "App Tier Subnet 1", "App Tier Subnet 2", "DB Tier Subnet 1", "DB Tier Subnet 2"]
+subnetNames = ["DMZ Tier Subnet 1", "DMZ Tier Subnet 2", "Web Tier Subnet 1", "Web Tier Subnet 2",
+               "App Tier Subnet 1", "App Tier Subnet 2", "DB Tier Subnet 1", "DB Tier Subnet 2"]
 
 subnets = []
 
