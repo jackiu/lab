@@ -100,6 +100,24 @@
             },
             "Type": "AWS::EC2::Route"
         },
+        "PrivateRouteTable": {
+            "Properties": {
+                "Tags": [
+                    [
+                        {
+                            "Key": "Application",
+                            "Value": {
+                                "Ref": "AWS::StackName"
+                            }
+                        }
+                    ]
+                ],
+                "VpcId": {
+                    "Ref": "VPC"
+                }
+            },
+            "Type": "AWS::EC2::RouteTable"
+        },
         "PubRouteTableAsso1": {
             "Properties": {
                 "RouteTableId": {
