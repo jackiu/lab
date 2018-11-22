@@ -78,6 +78,7 @@ t.add_resource(natEIP2)
 t.add_resource(ngw1)
 t.add_resource(ngw2)
 t.add_resource(publicRouteTable)
+t.add_resource(privateRouteTable)
 t.add_resource(privateRoute1)
 t.add_resource(privateRoute2)
 for s in srtas:
