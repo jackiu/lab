@@ -5,8 +5,8 @@ from troposphere.ec2 import Subnet
 from troposphere.ec2 import InternetGateway, VPCGatewayAttachment, NatGateway, EIP, RouteTable, Route, SubnetRouteTableAssociation
 
 ##################### Define variable #######################
-cidrPrefix = "192.168"
-vpcCIDR = cidrPrefix + ".0.0/16"
+cidrPrefix = "192.168."
+vpcCIDR = cidrPrefix + "0.0/16"
 everywhereCIDR = "0.0.0.0/0"
 
 subnetCIDR = []
@@ -27,8 +27,7 @@ for i in range(1, 9):
     subnets.append( Subnet("Subnet" + str(i),
                     VpcId=Ref(vpc), 
                     CidrBlock = subnetCIDR[i-1],
-                    Tags = [Tags(Application=Ref("AWS::StackName"),
-                        Name=subnetNames[i-1])],
+                    Tags = Tags(Application=Ref("AWS::StackName"), Name=subnetNames[i-1]),
                     AvailabilityZone = Select( ((i+1)%2) , GetAZs("")) ) )
 
 igw = InternetGateway("IGW")
@@ -38,11 +37,11 @@ igwAttachment = VPCGatewayAttachment("IGWAttachement", InternetGatewayId=Ref(igw
 natEIP1 = EIP("NatEIP1", Domain="vpc")
 natEIP2 = EIP("NatEIP2", Domain="vpc")
 
-ngw1 = NatGateway("NAT1", AllocationId=GetAtt(natEIP1, "AllocationId"), SubnetId=Ref(subnets[0]), Tags = [Tags(Application=Ref("AWS::StackName"))])
-ngw2 = NatGateway("NAT2", AllocationId=GetAtt(natEIP2, "AllocationId"), SubnetId=Ref(subnets[1]), Tags = [Tags(Application=Ref("AWS::StackName"))])
+ngw1 = NatGateway("NGW1", AllocationId=GetAtt(natEIP1, "AllocationId"), SubnetId=Ref(subnets[0]), Tags = Tags(Application=Ref("AWS::StackName")))
+ngw2 = NatGateway("NGW2", AllocationId=GetAtt(natEIP2, "AllocationId"), SubnetId=Ref(subnets[1]), Tags = Tags(Application=Ref("AWS::StackName")))
 
-publicRouteTable = RouteTable("PublicRouteTable", VpcId=Ref(vpc), Tags = [Tags(Application=Ref("AWS::StackName"))])
-privateRouteTable = RouteTable("PrivateRouteTable", VpcId=Ref(vpc), Tags = [Tags(Application=Ref("AWS::StackName"))])
+publicRouteTable = RouteTable("PublicRouteTable", VpcId=Ref(vpc), Tags = Tags(Application=Ref("AWS::StackName")))
+privateRouteTable = RouteTable("PrivateRouteTable", VpcId=Ref(vpc), Tags = Tags(Application=Ref("AWS::StackName")))
 
 publicRoute = Route("PublicRoute", DestinationCidrBlock=everywhereCIDR, GatewayId=Ref(igw), RouteTableId=Ref(publicRouteTable))
 privateRoute1 = Route("PrivateRoute1", DestinationCidrBlock=everywhereCIDR, GatewayId=Ref(ngw1), RouteTableId=Ref(privateRouteTable))
@@ -67,6 +66,8 @@ t.add_description("""\
 AWS CloudFormation BLAH \
 **WARNING** This template creates an Amazon EC2 instance. You will be billed \
 for the AWS resources used if you create a stack from this template.""")
+
+t.add_parameter(Parameter("RandomString", Description="RandomString", Type="String"))
 
 t.add_resource(vpc)
 

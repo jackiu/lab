@@ -1,3 +1,4 @@
-[
-  
-]
+[{
+    "ParameterKey": "RandomString",
+    "ParameterValue": "$[taskcat_random-string]"
+}]

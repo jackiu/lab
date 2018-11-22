@@ -1,6 +1,12 @@
 {
     "AWSTemplateFormatVersion": "2010-09-09",
     "Description": "AWS CloudFormation BLAH **WARNING** This template creates an Amazon EC2 instance. You will be billed for the AWS resources used if you create a stack from this template.",
+    "Parameters": {
+        "RandomString": {
+            "Description": "RandomString",
+            "Type": "String"
+        }
+    },
     "Resources": {
         "IGW": {
             "Type": "AWS::EC2::InternetGateway"
@@ -16,7 +22,7 @@
             },
             "Type": "AWS::EC2::VPCGatewayAttachment"
         },
-        "NAT1": {
+        "NGW1": {
             "Properties": {
                 "AllocationId": {
                     "Fn::GetAtt": [
@@ -28,19 +34,17 @@
                     "Ref": "Subnet1"
                 },
                 "Tags": [
-                    [
-                        {
-                            "Key": "Application",
-                            "Value": {
-                                "Ref": "AWS::StackName"
-                            }
+                    {
+                        "Key": "Application",
+                        "Value": {
+                            "Ref": "AWS::StackName"
                         }
-                    ]
+                    }
                 ]
             },
             "Type": "AWS::EC2::NatGateway"
         },
-        "NAT2": {
+        "NGW2": {
             "Properties": {
                 "AllocationId": {
                     "Fn::GetAtt": [
@@ -52,14 +56,12 @@
                     "Ref": "Subnet2"
                 },
                 "Tags": [
-                    [
-                        {
-                            "Key": "Application",
-                            "Value": {
-                                "Ref": "AWS::StackName"
-                            }
+                    {
+                        "Key": "Application",
+                        "Value": {
+                            "Ref": "AWS::StackName"
                         }
-                    ]
+                    }
                 ]
             },
             "Type": "AWS::EC2::NatGateway"
@@ -80,7 +82,7 @@
             "Properties": {
                 "DestinationCidrBlock": "0.0.0.0/0",
                 "GatewayId": {
-                    "Ref": "NAT1"
+                    "Ref": "NGW1"
                 },
                 "RouteTableId": {
                     "Ref": "PrivateRouteTable"
@@ -92,7 +94,7 @@
             "Properties": {
                 "DestinationCidrBlock": "0.0.0.0/0",
                 "GatewayId": {
-                    "Ref": "NAT2"
+                    "Ref": "NGW2"
                 },
                 "RouteTableId": {
                     "Ref": "PrivateRouteTable"
@@ -103,14 +105,12 @@
         "PrivateRouteTable": {
             "Properties": {
                 "Tags": [
-                    [
-                        {
-                            "Key": "Application",
-                            "Value": {
-                                "Ref": "AWS::StackName"
-                            }
+                    {
+                        "Key": "Application",
+                        "Value": {
+                            "Ref": "AWS::StackName"
                         }
-                    ]
+                    }
                 ],
                 "VpcId": {
                     "Ref": "VPC"
@@ -209,14 +209,12 @@
         "PublicRouteTable": {
             "Properties": {
                 "Tags": [
-                    [
-                        {
-                            "Key": "Application",
-                            "Value": {
-                                "Ref": "AWS::StackName"
-                            }
+                    {
+                        "Key": "Application",
+                        "Value": {
+                            "Ref": "AWS::StackName"
                         }
-                    ]
+                    }
                 ],
                 "VpcId": {
                     "Ref": "VPC"
@@ -234,20 +232,18 @@
                         }
                     ]
                 },
-                "CidrBlock": "192.1681.0/24",
+                "CidrBlock": "192.168.1.0/24",
                 "Tags": [
-                    [
-                        {
-                            "Key": "Application",
-                            "Value": {
-                                "Ref": "AWS::StackName"
-                            }
-                        },
-                        {
-                            "Key": "Name",
-                            "Value": "DMZ Tier Subnet 1"
+                    {
+                        "Key": "Application",
+                        "Value": {
+                            "Ref": "AWS::StackName"
                         }
-                    ]
+                    },
+                    {
+                        "Key": "Name",
+                        "Value": "DMZ Tier Subnet 1"
+                    }
                 ],
                 "VpcId": {
                     "Ref": "VPC"
@@ -265,20 +261,18 @@
                         }
                     ]
                 },
-                "CidrBlock": "192.1682.0/24",
+                "CidrBlock": "192.168.2.0/24",
                 "Tags": [
-                    [
-                        {
-                            "Key": "Application",
-                            "Value": {
-                                "Ref": "AWS::StackName"
-                            }
-                        },
-                        {
-                            "Key": "Name",
-                            "Value": "DMZ Tier Subnet 2"
+                    {
+                        "Key": "Application",
+                        "Value": {
+                            "Ref": "AWS::StackName"
                         }
-                    ]
+                    },
+                    {
+                        "Key": "Name",
+                        "Value": "DMZ Tier Subnet 2"
+                    }
                 ],
                 "VpcId": {
                     "Ref": "VPC"
@@ -296,20 +290,18 @@
                         }
                     ]
                 },
-                "CidrBlock": "192.1683.0/24",
+                "CidrBlock": "192.168.3.0/24",
                 "Tags": [
-                    [
-                        {
-                            "Key": "Application",
-                            "Value": {
-                                "Ref": "AWS::StackName"
-                            }
-                        },
-                        {
-                            "Key": "Name",
-                            "Value": "Web Tier Subnet 1"
+                    {
+                        "Key": "Application",
+                        "Value": {
+                            "Ref": "AWS::StackName"
                         }
-                    ]
+                    },
+                    {
+                        "Key": "Name",
+                        "Value": "Web Tier Subnet 1"
+                    }
                 ],
                 "VpcId": {
                     "Ref": "VPC"
@@ -327,20 +319,18 @@
                         }
                     ]
                 },
-                "CidrBlock": "192.1684.0/24",
+                "CidrBlock": "192.168.4.0/24",
                 "Tags": [
-                    [
-                        {
-                            "Key": "Application",
-                            "Value": {
-                                "Ref": "AWS::StackName"
-                            }
-                        },
-                        {
-                            "Key": "Name",
-                            "Value": "Web Tier Subnet 2"
+                    {
+                        "Key": "Application",
+                        "Value": {
+                            "Ref": "AWS::StackName"
                         }
-                    ]
+                    },
+                    {
+                        "Key": "Name",
+                        "Value": "Web Tier Subnet 2"
+                    }
                 ],
                 "VpcId": {
                     "Ref": "VPC"
@@ -358,20 +348,18 @@
                         }
                     ]
                 },
-                "CidrBlock": "192.1685.0/24",
+                "CidrBlock": "192.168.5.0/24",
                 "Tags": [
-                    [
-                        {
-                            "Key": "Application",
-                            "Value": {
-                                "Ref": "AWS::StackName"
-                            }
-                        },
-                        {
-                            "Key": "Name",
-                            "Value": "App Tier Subnet 1"
+                    {
+                        "Key": "Application",
+                        "Value": {
+                            "Ref": "AWS::StackName"
                         }
-                    ]
+                    },
+                    {
+                        "Key": "Name",
+                        "Value": "App Tier Subnet 1"
+                    }
                 ],
                 "VpcId": {
                     "Ref": "VPC"
@@ -389,20 +377,18 @@
                         }
                     ]
                 },
-                "CidrBlock": "192.1686.0/24",
+                "CidrBlock": "192.168.6.0/24",
                 "Tags": [
-                    [
-                        {
-                            "Key": "Application",
-                            "Value": {
-                                "Ref": "AWS::StackName"
-                            }
-                        },
-                        {
-                            "Key": "Name",
-                            "Value": "App Tier Subnet 2"
+                    {
+                        "Key": "Application",
+                        "Value": {
+                            "Ref": "AWS::StackName"
                         }
-                    ]
+                    },
+                    {
+                        "Key": "Name",
+                        "Value": "App Tier Subnet 2"
+                    }
                 ],
                 "VpcId": {
                     "Ref": "VPC"
@@ -420,20 +406,18 @@
                         }
                     ]
                 },
-                "CidrBlock": "192.1687.0/24",
+                "CidrBlock": "192.168.7.0/24",
                 "Tags": [
-                    [
-                        {
-                            "Key": "Application",
-                            "Value": {
-                                "Ref": "AWS::StackName"
-                            }
-                        },
-                        {
-                            "Key": "Name",
-                            "Value": "DB Tier Subnet 1"
+                    {
+                        "Key": "Application",
+                        "Value": {
+                            "Ref": "AWS::StackName"
                         }
-                    ]
+                    },
+                    {
+                        "Key": "Name",
+                        "Value": "DB Tier Subnet 1"
+                    }
                 ],
                 "VpcId": {
                     "Ref": "VPC"
@@ -451,20 +435,18 @@
                         }
                     ]
                 },
-                "CidrBlock": "192.1688.0/24",
+                "CidrBlock": "192.168.8.0/24",
                 "Tags": [
-                    [
-                        {
-                            "Key": "Application",
-                            "Value": {
-                                "Ref": "AWS::StackName"
-                            }
-                        },
-                        {
-                            "Key": "Name",
-                            "Value": "DB Tier Subnet 2"
+                    {
+                        "Key": "Application",
+                        "Value": {
+                            "Ref": "AWS::StackName"
                         }
-                    ]
+                    },
+                    {
+                        "Key": "Name",
+                        "Value": "DB Tier Subnet 2"
+                    }
                 ],
                 "VpcId": {
                     "Ref": "VPC"
