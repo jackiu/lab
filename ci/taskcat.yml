@@ -16,3 +16,15 @@ tests:
       - us-west-1
       - us-east-1
     template_file: iam.json
+  scenario-2:
+    parameter_input: debug-networking.json
+    regions:
+      - us-west-1
+      - us-east-1
+    template_file: networking.json
+  scenario-3:
+    parameter_input: debug-firewall.json
+    regions:
+      - us-west-1
+      - us-east-1
+    template_file: firewall.json

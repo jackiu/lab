@@ -3,13 +3,30 @@
     "Description": "AWS CloudFormation BLAH **WARNING** This template creates an Amazon EC2 instance. You will be billed for the AWS resources used if you create a stack from this template.",
     "Outputs": {
         "InstanceProfile": {
+            "Export": {
+                "Name": {
+                    "Fn::Join": [
+                        "-",
+                        [
+                            {
+                                "Ref": "AWS::StackName"
+                            },
+                            "InstanceProfileArn"
+                        ]
+                    ]
+                }
+            },
             "Value": {
-                "Ref": "EC2InstanceProfile"
+                "Fn::GetAtt": [
+                    "EC2InstanceProfile",
+                    "Arn"
+                ]
             }
         }
     },
     "Parameters": {
         "RandomString": {
+            "Default": "123",
             "Description": "RandomString",
             "Type": "String"
         }
@@ -47,7 +64,7 @@
                     "arn:aws:iam::aws:policy/AmazonS3FullAccess",
                     "arn:aws:iam::aws:policy/AmazonSSMFullAccess"
                 ],
-                "RoleName": "EC2Role"
+                "RoleName": "GenericEC2Role"
             },
             "Type": "AWS::IAM::Role"
         }

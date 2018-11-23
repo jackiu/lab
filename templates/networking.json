@@ -1,8 +1,29 @@
 {
     "AWSTemplateFormatVersion": "2010-09-09",
     "Description": "AWS CloudFormation BLAH **WARNING** This template creates an Amazon EC2 instance. You will be billed for the AWS resources used if you create a stack from this template.",
+    "Outputs": {
+        "VPC": {
+            "Export": {
+                "Name": {
+                    "Fn::Join": [
+                        "-",
+                        [
+                            {
+                                "Ref": "AWS::StackName"
+                            },
+                            "VPCId"
+                        ]
+                    ]
+                }
+            },
+            "Value": {
+                "Ref": "VPC"
+            }
+        }
+    },
     "Parameters": {
         "RandomString": {
+            "Default": "123",
             "Description": "RandomString",
             "Type": "String"
         }
@@ -81,11 +102,11 @@
         "PrivateRoute1": {
             "Properties": {
                 "DestinationCidrBlock": "0.0.0.0/0",
-                "GatewayId": {
+                "NatGatewayId": {
                     "Ref": "NGW1"
                 },
                 "RouteTableId": {
-                    "Ref": "PrivateRouteTable"
+                    "Ref": "PrivateRouteTable1"
                 }
             },
             "Type": "AWS::EC2::Route"
@@ -93,16 +114,16 @@
         "PrivateRoute2": {
             "Properties": {
                 "DestinationCidrBlock": "0.0.0.0/0",
-                "GatewayId": {
+                "NatGatewayId": {
                     "Ref": "NGW2"
                 },
                 "RouteTableId": {
-                    "Ref": "PrivateRouteTable"
+                    "Ref": "PrivateRouteTable2"
                 }
             },
             "Type": "AWS::EC2::Route"
         },
-        "PrivateRouteTable": {
+        "PrivateRouteTable1": {
             "Properties": {
                 "Tags": [
                     {
@@ -117,6 +138,88 @@
                 }
             },
             "Type": "AWS::EC2::RouteTable"
+        },
+        "PrivateRouteTable2": {
+            "Properties": {
+                "Tags": [
+                    {
+                        "Key": "Application",
+                        "Value": {
+                            "Ref": "AWS::StackName"
+                        }
+                    }
+                ],
+                "VpcId": {
+                    "Ref": "VPC"
+                }
+            },
+            "Type": "AWS::EC2::RouteTable"
+        },
+        "PrivateRouteTableAsso3": {
+            "Properties": {
+                "RouteTableId": {
+                    "Ref": "PrivateRouteTable1"
+                },
+                "SubnetId": {
+                    "Ref": "Subnet3"
+                }
+            },
+            "Type": "AWS::EC2::SubnetRouteTableAssociation"
+        },
+        "PrivateRouteTableAsso4": {
+            "Properties": {
+                "RouteTableId": {
+                    "Ref": "PrivateRouteTable2"
+                },
+                "SubnetId": {
+                    "Ref": "Subnet4"
+                }
+            },
+            "Type": "AWS::EC2::SubnetRouteTableAssociation"
+        },
+        "PrivateRouteTableAsso5": {
+            "Properties": {
+                "RouteTableId": {
+                    "Ref": "PrivateRouteTable1"
+                },
+                "SubnetId": {
+                    "Ref": "Subnet5"
+                }
+            },
+            "Type": "AWS::EC2::SubnetRouteTableAssociation"
+        },
+        "PrivateRouteTableAsso6": {
+            "Properties": {
+                "RouteTableId": {
+                    "Ref": "PrivateRouteTable2"
+                },
+                "SubnetId": {
+                    "Ref": "Subnet6"
+                }
+            },
+            "Type": "AWS::EC2::SubnetRouteTableAssociation"
+        },
+        "PrivateRouteTableAsso7": {
+            "Properties": {
+                "RouteTableId": {
+                    "Ref": "PrivateRouteTable1"
+                },
+                "SubnetId": {
+                    "Ref": "Subnet7"
+                }
+            },
+            "Type": "AWS::EC2::SubnetRouteTableAssociation"
+        },
+        "PrivateRouteTableAsso8": {
+            "Properties": {
+                "RouteTableId": {
+                    "Ref": "PrivateRouteTable2"
+                },
+                "SubnetId": {
+                    "Ref": "Subnet8"
+                }
+            },
+            "Type": "AWS::EC2::SubnetRouteTableAssociation"
         },
         "PubRouteTableAsso1": {
             "Properties": {
@@ -140,71 +243,17 @@
             },
             "Type": "AWS::EC2::SubnetRouteTableAssociation"
         },
-        "PubRouteTableAsso3": {
+        "PublicRoute": {
             "Properties": {
-                "RouteTableId": {
-                    "Ref": "PrivateRoute1"
+                "DestinationCidrBlock": "0.0.0.0/0",
+                "GatewayId": {
+                    "Ref": "IGW"
                 },
-                "SubnetId": {
-                    "Ref": "Subnet3"
+                "RouteTableId": {
+                    "Ref": "PublicRouteTable"
                 }
             },
-            "Type": "AWS::EC2::SubnetRouteTableAssociation"
-        },
-        "PubRouteTableAsso4": {
-            "Properties": {
-                "RouteTableId": {
-                    "Ref": "PrivateRoute2"
-                },
-                "SubnetId": {
-                    "Ref": "Subnet4"
-                }
-            },
-            "Type": "AWS::EC2::SubnetRouteTableAssociation"
-        },
-        "PubRouteTableAsso5": {
-            "Properties": {
-                "RouteTableId": {
-                    "Ref": "PrivateRoute1"
-                },
-                "SubnetId": {
-                    "Ref": "Subnet5"
-                }
-            },
-            "Type": "AWS::EC2::SubnetRouteTableAssociation"
-        },
-        "PubRouteTableAsso6": {
-            "Properties": {
-                "RouteTableId": {
-                    "Ref": "PrivateRoute2"
-                },
-                "SubnetId": {
-                    "Ref": "Subnet6"
-                }
-            },
-            "Type": "AWS::EC2::SubnetRouteTableAssociation"
-        },
-        "PubRouteTableAsso7": {
-            "Properties": {
-                "RouteTableId": {
-                    "Ref": "PrivateRoute1"
-                },
-                "SubnetId": {
-                    "Ref": "Subnet7"
-                }
-            },
-            "Type": "AWS::EC2::SubnetRouteTableAssociation"
-        },
-        "PubRouteTableAsso8": {
-            "Properties": {
-                "RouteTableId": {
-                    "Ref": "PrivateRoute2"
-                },
-                "SubnetId": {
-                    "Ref": "Subnet8"
-                }
-            },
-            "Type": "AWS::EC2::SubnetRouteTableAssociation"
+            "Type": "AWS::EC2::Route"
         },
         "PublicRouteTable": {
             "Properties": {

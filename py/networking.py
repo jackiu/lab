@@ -1,5 +1,5 @@
 from troposphere import Join, Output
-from troposphere import Parameter, Ref, Tags, Template, GetAZs, GetAtt, Select
+from troposphere import Parameter, Ref, Tags, Template, GetAZs, GetAtt, Select,Export, Name
 from troposphere.ec2 import VPC
 from troposphere.ec2 import Subnet, InternetGateway, VPCGatewayAttachment, NatGateway
 from troposphere.ec2 import EIP, RouteTable, Route, SubnetRouteTableAssociation
@@ -43,11 +43,12 @@ ngw1 = NatGateway("NGW1", AllocationId=GetAtt(natEIP1, "AllocationId"), SubnetId
 ngw2 = NatGateway("NGW2", AllocationId=GetAtt(natEIP2, "AllocationId"), SubnetId=Ref(subnets[1]), Tags = Tags(Application=Ref("AWS::StackName")))
 
 publicRouteTable = RouteTable("PublicRouteTable", VpcId=Ref(vpc), Tags = Tags(Application=Ref("AWS::StackName")))
-privateRouteTable = RouteTable("PrivateRouteTable", VpcId=Ref(vpc), Tags = Tags(Application=Ref("AWS::StackName")))
+privateRouteTable1 = RouteTable("PrivateRouteTable1", VpcId=Ref(vpc), Tags = Tags(Application=Ref("AWS::StackName")))
+privateRouteTable2 = RouteTable("PrivateRouteTable2", VpcId=Ref(vpc), Tags = Tags(Application=Ref("AWS::StackName")))
 
 publicRoute = Route("PublicRoute", DestinationCidrBlock=everywhereCIDR, GatewayId=Ref(igw), RouteTableId=Ref(publicRouteTable))
-privateRoute1 = Route("PrivateRoute1", DestinationCidrBlock=everywhereCIDR, GatewayId=Ref(ngw1), RouteTableId=Ref(privateRouteTable))
-privateRoute2 = Route("PrivateRoute2", DestinationCidrBlock=everywhereCIDR, GatewayId=Ref(ngw2), RouteTableId=Ref(privateRouteTable))
+privateRoute1 = Route("PrivateRoute1", DestinationCidrBlock=everywhereCIDR, NatGatewayId=Ref(ngw1), RouteTableId=Ref(privateRouteTable1))
+privateRoute2 = Route("PrivateRoute2", DestinationCidrBlock=everywhereCIDR, NatGatewayId=Ref(ngw2), RouteTableId=Ref(privateRouteTable2))
 
 srtas = []
 srtas.append(SubnetRouteTableAssociation("PubRouteTableAsso1", RouteTableId=Ref(publicRouteTable), SubnetId=Ref(subnets[0])))
@@ -56,14 +57,11 @@ srtas.append(SubnetRouteTableAssociation("PubRouteTableAsso2", RouteTableId=Ref(
 for i in range(2, 8):
     route = None
     if (i % 2) == 0:
-        route = privateRoute1
+        routeTable = privateRouteTable1
     else:
-        route = privateRoute2
+        routeTable = privateRouteTable2
         
-    srtas.append(SubnetRouteTableAssociation("PubRouteTableAsso" + str(i+1) , RouteTableId=Ref(route), SubnetId=Ref(subnets[i])))
-
-
-
+    srtas.append(SubnetRouteTableAssociation("PrivateRouteTableAsso" + str(i+1) , RouteTableId=Ref(routeTable), SubnetId=Ref(subnets[i])))
 
 t.add_version('2010-09-09')
 
@@ -72,7 +70,7 @@ AWS CloudFormation BLAH \
 **WARNING** This template creates an Amazon EC2 instance. You will be billed \
 for the AWS resources used if you create a stack from this template.""")
 
-t.add_parameter(Parameter("RandomString", Description="RandomString", Type="String"))
+t.add_parameter(Parameter("RandomString", Description="RandomString", Type="String", Default="123"))
 
 t.add_resource(vpc)
 
@@ -85,13 +83,16 @@ t.add_resource(natEIP2)
 t.add_resource(ngw1)
 t.add_resource(ngw2)
 t.add_resource(publicRouteTable)
-t.add_resource(privateRouteTable)
+t.add_resource(privateRouteTable1)
+t.add_resource(privateRouteTable2)
+t.add_resource(publicRoute)
 t.add_resource(privateRoute1)
 t.add_resource(privateRoute2)
 for s in srtas:
     t.add_resource(s)
 
-t.add_output(Output("VPC",Value=Ref(vpc)))
+
+t.add_output(Output("VPC",Value=Ref(vpc), Export=Export(Name(Join("-", [Ref("AWS::StackName"), "VPCId"])))))
 file = open('networking.json','w')
 file.write(t.to_json())
 
