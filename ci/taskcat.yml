@@ -11,8 +11,8 @@ global:
   reporting: true
 tests:
   scenario-1:
-    parameter_input: debug-networking.json
+    parameter_input: debug-iam.json
     regions:
       - us-west-1
       - us-east-1
-    template_file: networking.json
+    template_file: iam.json

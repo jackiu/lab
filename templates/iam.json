@@ -1,0 +1,55 @@
+{
+    "AWSTemplateFormatVersion": "2010-09-09",
+    "Description": "AWS CloudFormation BLAH **WARNING** This template creates an Amazon EC2 instance. You will be billed for the AWS resources used if you create a stack from this template.",
+    "Outputs": {
+        "InstanceProfile": {
+            "Value": {
+                "Ref": "EC2InstanceProfile"
+            }
+        }
+    },
+    "Parameters": {
+        "RandomString": {
+            "Description": "RandomString",
+            "Type": "String"
+        }
+    },
+    "Resources": {
+        "EC2InstanceProfile": {
+            "Properties": {
+                "InstanceProfileName": "EC2InstanceProfile",
+                "Roles": [
+                    {
+                        "Ref": "Role"
+                    }
+                ]
+            },
+            "Type": "AWS::IAM::InstanceProfile"
+        },
+        "Role": {
+            "Properties": {
+                "AssumeRolePolicyDocument": {
+                    "Statement": [
+                        {
+                            "Action": [
+                                "sts:AssumeRole"
+                            ],
+                            "Effect": "Allow",
+                            "Principal": {
+                                "Service": [
+                                    "ec2.amazonaws.com"
+                                ]
+                            }
+                        }
+                    ]
+                },
+                "ManagedPolicyArns": [
+                    "arn:aws:iam::aws:policy/AmazonS3FullAccess",
+                    "arn:aws:iam::aws:policy/AmazonSSMFullAccess"
+                ],
+                "RoleName": "EC2Role"
+            },
+            "Type": "AWS::IAM::Role"
+        }
+    }
+}

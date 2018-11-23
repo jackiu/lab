@@ -1,0 +1,4 @@
+[{
+    "ParameterKey": "VPC",
+    "ParameterValue": "$[taskcat_random-string]"
+}]

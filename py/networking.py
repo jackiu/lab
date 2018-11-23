@@ -1,8 +1,10 @@
 from troposphere import Join, Output
 from troposphere import Parameter, Ref, Tags, Template, GetAZs, GetAtt, Select
 from troposphere.ec2 import VPC
-from troposphere.ec2 import Subnet
-from troposphere.ec2 import InternetGateway, VPCGatewayAttachment, NatGateway, EIP, RouteTable, Route, SubnetRouteTableAssociation
+from troposphere.ec2 import Subnet, InternetGateway, VPCGatewayAttachment, NatGateway
+from troposphere.ec2 import EIP, RouteTable, Route, SubnetRouteTableAssociation
+from troposphere.ec2 import SecurityGroupIngress, SecurityGroupEgress, SecurityGroup
+
 
 ##################### Define variable #######################
 cidrPrefix = "192.168."
@@ -60,6 +62,9 @@ for i in range(2, 8):
         
     srtas.append(SubnetRouteTableAssociation("PubRouteTableAsso" + str(i+1) , RouteTableId=Ref(route), SubnetId=Ref(subnets[i])))
 
+
+
+
 t.add_version('2010-09-09')
 
 t.add_description("""\
@@ -86,6 +91,7 @@ t.add_resource(privateRoute2)
 for s in srtas:
     t.add_resource(s)
 
+t.add_output(Output("VPC",Value=Ref(vpc)))
 file = open('networking.json','w')
 file.write(t.to_json())
 

@@ -1,0 +1,199 @@
+{
+    "Parameters": {
+        "VPC": {
+            "Description": "VPC",
+            "Type": "String"
+        }
+    },
+    "Resources": {
+        "AppALBSG": {
+            "Properties": {
+                "GroupDescription": "Application Load Balancer Security Group",
+                "GroupName": "App ALB SG",
+                "VpcId": {
+                    "Ref": "VPC"
+                }
+            },
+            "Type": "AWS::EC2::SecurityGroup"
+        },
+        "AppInstanceSG": {
+            "Properties": {
+                "GroupDescription": "Application Instance Security Group",
+                "GroupName": "App Instance SG",
+                "VpcId": {
+                    "Ref": "VPC"
+                }
+            },
+            "Type": "AWS::EC2::SecurityGroup"
+        },
+        "DBSG": {
+            "Properties": {
+                "GroupDescription": "Database Security Group",
+                "GroupName": "DB SG",
+                "SecurityGroupEgress": [
+                    {
+                        "CidrIp": "127.0.0.1/32",
+                        "IpProtocol": "-1"
+                    }
+                ],
+                "VpcId": {
+                    "Ref": "VPC"
+                }
+            },
+            "Type": "AWS::EC2::SecurityGroup"
+        },
+        "WebALBSG": {
+            "Properties": {
+                "GroupDescription": "ALB Security Group",
+                "GroupName": "ALB SG",
+                "VpcId": {
+                    "Ref": "VPC"
+                }
+            },
+            "Type": "AWS::EC2::SecurityGroup"
+        },
+        "WebInstanceSG": {
+            "Properties": {
+                "GroupDescription": "Web Instance Security Group",
+                "GroupName": "Web Instance SG",
+                "VpcId": {
+                    "Ref": "VPC"
+                }
+            },
+            "Type": "AWS::EC2::SecurityGroup"
+        },
+        "appALBEngress": {
+            "Properties": {
+                "Description": "App ALB Egress to App Instance",
+                "DestinationSecurityGroupId": {
+                    "Ref": "DBSG"
+                },
+                "FromPort": 8443,
+                "GroupId": {
+                    "Ref": "AppALBSG"
+                },
+                "IpProtocol": "TCP",
+                "ToPort": 8443
+            },
+            "Type": "AWS::EC2::SecurityGroupEgress"
+        },
+        "appALBIngress": {
+            "Properties": {
+                "Description": "App ALB Ingress from App Instance",
+                "FromPort": 443,
+                "GroupId": {
+                    "Ref": "AppALBSG"
+                },
+                "IpProtocol": "TCP",
+                "SourceSecurityGroupId": {
+                    "Ref": "WebInstanceSG"
+                },
+                "ToPort": 443
+            },
+            "Type": "AWS::EC2::SecurityGroupIngress"
+        },
+        "appEngress": {
+            "Properties": {
+                "Description": "App Server Egress to DB",
+                "DestinationSecurityGroupId": {
+                    "Ref": "DBSG"
+                },
+                "FromPort": 5432,
+                "GroupId": {
+                    "Ref": "AppInstanceSG"
+                },
+                "IpProtocol": "TCP",
+                "ToPort": 5432
+            },
+            "Type": "AWS::EC2::SecurityGroupEgress"
+        },
+        "appIngress": {
+            "Properties": {
+                "Description": "App Server Ingress from Internal Application Load Balancer",
+                "FromPort": 8443,
+                "GroupId": {
+                    "Ref": "AppInstanceSG"
+                },
+                "IpProtocol": "TCP",
+                "SourceSecurityGroupId": {
+                    "Ref": "AppALBSG"
+                },
+                "ToPort": 8443
+            },
+            "Type": "AWS::EC2::SecurityGroupIngress"
+        },
+        "dbIngress": {
+            "Properties": {
+                "Description": "db Ingress from app instance",
+                "FromPort": 5432,
+                "GroupId": {
+                    "Ref": "DBSG"
+                },
+                "IpProtocol": "TCP",
+                "SourceSecurityGroupId": {
+                    "Ref": "AppInstanceSG"
+                },
+                "ToPort": 5432
+            },
+            "Type": "AWS::EC2::SecurityGroupIngress"
+        },
+        "webALBEngress": {
+            "Properties": {
+                "Description": "Egress to Web Server",
+                "DestinationSecurityGroupId": {
+                    "Ref": "WebInstanceSG"
+                },
+                "FromPort": 443,
+                "GroupId": {
+                    "Ref": "WebALBSG"
+                },
+                "IpProtocol": "TCP",
+                "ToPort": 443
+            },
+            "Type": "AWS::EC2::SecurityGroupEgress"
+        },
+        "webALBIngress": {
+            "Properties": {
+                "CidrIp": "0.0.0.0/0",
+                "Description": "Opened Ingress",
+                "FromPort": 443,
+                "GroupId": {
+                    "Ref": "WebALBSG"
+                },
+                "IpProtocol": "TCP",
+                "ToPort": 443
+            },
+            "Type": "AWS::EC2::SecurityGroupIngress"
+        },
+        "webEngress": {
+            "Properties": {
+                "Description": "Web Server Egress to Internal Application Load Balancer",
+                "DestinationSecurityGroupId": {
+                    "Ref": "AppALBSG"
+                },
+                "FromPort": 443,
+                "GroupId": {
+                    "Ref": "WebInstanceSG"
+                },
+                "IpProtocol": "TCP",
+                "ToPort": 443
+            },
+            "Type": "AWS::EC2::SecurityGroupEgress"
+        },
+        "webIngress": {
+            "Properties": {
+                "Description": "Web Server Ingress from Web Application Load Balancer",
+                "FromPort": 443,
+                "GroupId": {
+                    "Ref": "WebInstanceSG"
+                },
+                "IpProtocol": "TCP",
+                "SourceSecurityGroupId": {
+                    "Ref": "WebALBSG"
+                },
+                "ToPort": 443
+            },
+            "Type": "AWS::EC2::SecurityGroupIngress"
+        }
+    }
+}
