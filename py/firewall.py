@@ -1,8 +1,6 @@
-from troposphere import Join, Output
+from troposphere import Join, Output, Export, Name, ImportValue, Sub
 from troposphere import Parameter, Ref, Tags, Template, GetAZs, GetAtt, Select
-from troposphere.ec2 import VPC
-from troposphere.ec2 import Subnet, InternetGateway, VPCGatewayAttachment, NatGateway
-from troposphere.ec2 import EIP, RouteTable, Route, SubnetRouteTableAssociation
+
 from troposphere.ec2 import SecurityGroupIngress, SecurityGroupEgress, SecurityGroup
 
 
@@ -14,50 +12,58 @@ blockedEgress = [{
     "IpProtocol": "-1"
 }]
 
-vpc = Parameter("VPC", Description="VPC", Type="AWS::EC2::VPC::Id")
+networkingStackName = Parameter("NetworkingStackName", Description="NetworkingStackName", Type="String", Default="Networking-Stack")
 
+vpc = ImportValue(Sub("${NetworkingStackName}-VPCId"))
 
 dbSG = SecurityGroup( "DBSG", GroupName="DB SG", 
                     GroupDescription="Database Security Group", 
                     SecurityGroupEgress=blockedEgress,
-                    VpcId=Ref(vpc) )
+                    VpcId=vpc )
 
 appInstanceSG = SecurityGroup( "AppInstanceSG", GroupName="App Instance SG", 
                     GroupDescription="Application Instance Security Group", 
-                    VpcId=Ref(vpc) )
+                    VpcId=vpc )
 
 appALBSG = SecurityGroup( "AppALBSG", GroupName="App ALB SG", 
                     GroupDescription="Application Load Balancer Security Group", 
-                    VpcId=Ref(vpc) )
+                    VpcId=vpc )
 
 
 webInstanceSG = SecurityGroup( "WebInstanceSG", GroupName="Web Instance SG", 
                     GroupDescription="Web Instance Security Group", 
-                    VpcId=Ref(vpc) )
+                    VpcId=vpc )
 
 webALBSG = SecurityGroup( "WebALBSG", GroupName="ALB SG", 
                     GroupDescription="ALB Security Group", 
-                    VpcId=Ref(vpc) )
+                    VpcId=vpc )
 
-dbIngress = SecurityGroupIngress("dbIngress", SourceSecurityGroupId=Ref(appInstanceSG), Description="db Ingress from app instance", IpProtocol="TCP", FromPort=5432, ToPort=5432, GroupId=Ref(dbSG))
+dbIngress = SecurityGroupIngress("DBIngress", SourceSecurityGroupId=Ref(appInstanceSG), Description="db Ingress from app instance", IpProtocol="TCP", FromPort=5432, ToPort=5432, GroupId=Ref(dbSG))
 
-appIngress = SecurityGroupIngress("appIngress", SourceSecurityGroupId=Ref(appALBSG), Description="App Server Ingress from Internal Application Load Balancer", IpProtocol="TCP", FromPort=8443, ToPort=8443, GroupId=Ref(appInstanceSG))
-appEngress = SecurityGroupEgress("appEngress", DestinationSecurityGroupId=Ref(dbSG), Description="App Server Egress to DB", IpProtocol="TCP", FromPort=5432, ToPort=5432, GroupId=Ref(appInstanceSG))
+appIngress = SecurityGroupIngress("AppIngress", SourceSecurityGroupId=Ref(appALBSG), Description="App Server Ingress from Internal Application Load Balancer", IpProtocol="TCP", FromPort=8443, ToPort=8443, GroupId=Ref(appInstanceSG))
+appEngress = SecurityGroupEgress("AppEngress", DestinationSecurityGroupId=Ref(dbSG), Description="App Server Egress to DB", IpProtocol="TCP", FromPort=5432, ToPort=5432, GroupId=Ref(appInstanceSG))
 
-appALBIngress = SecurityGroupIngress("appALBIngress", SourceSecurityGroupId=Ref(webInstanceSG), Description="App ALB Ingress from App Instance", IpProtocol="TCP", ToPort=443, FromPort=443, GroupId=Ref(appALBSG))
-appALBEngress = SecurityGroupEgress("appALBEngress", DestinationSecurityGroupId=Ref(dbSG), Description="App ALB Egress to App Instance", IpProtocol="TCP", FromPort=8443, ToPort=8443, GroupId=Ref(appALBSG))
+appALBIngress = SecurityGroupIngress("AppALBIngress", SourceSecurityGroupId=Ref(webInstanceSG), Description="App ALB Ingress from App Instance", IpProtocol="TCP", ToPort=443, FromPort=443, GroupId=Ref(appALBSG))
+appALBEngress = SecurityGroupEgress("AppALBEngress", DestinationSecurityGroupId=Ref(dbSG), Description="App ALB Egress to App Instance", IpProtocol="TCP", FromPort=8443, ToPort=8443, GroupId=Ref(appALBSG))
 
-webIngress = SecurityGroupIngress("webIngress", SourceSecurityGroupId=Ref(webALBSG), Description="Web Server Ingress from Web Application Load Balancer", IpProtocol="TCP", ToPort=443, FromPort=443, GroupId=Ref(webInstanceSG))
-webEngress = SecurityGroupEgress("webEngress", DestinationSecurityGroupId=Ref(appALBSG), Description="Web Server Egress to Internal Application Load Balancer", IpProtocol="TCP", FromPort=443, ToPort=443, GroupId=Ref(webInstanceSG))
+webIngress = SecurityGroupIngress("WebIngress", SourceSecurityGroupId=Ref(webALBSG), Description="Web Server Ingress from Web Application Load Balancer", IpProtocol="TCP", ToPort=443, FromPort=443, GroupId=Ref(webInstanceSG))
+webEngress = SecurityGroupEgress("WebEngress", DestinationSecurityGroupId=Ref(appALBSG), Description="Web Server Egress to Internal Application Load Balancer", IpProtocol="TCP", FromPort=443, ToPort=443, GroupId=Ref(webInstanceSG))
 
-webALBIngress = SecurityGroupIngress("webALBIngress", CidrIp=everywhereCIDR, Description="Opened Ingress", IpProtocol="TCP", ToPort=443, FromPort=443, GroupId=Ref(webALBSG))
-webALBEngress = SecurityGroupEgress("webALBEngress", DestinationSecurityGroupId=Ref(webInstanceSG), Description="Egress to Web Server", IpProtocol="TCP", FromPort=443, ToPort=443, GroupId=Ref(webALBSG))
+webALBIngress = SecurityGroupIngress("WebALBIngress", CidrIp=everywhereCIDR, Description="Opened Ingress", IpProtocol="TCP", ToPort=443, FromPort=443, GroupId=Ref(webALBSG))
+webALBEngress = SecurityGroupEgress("WebALBEngress", DestinationSecurityGroupId=Ref(webInstanceSG), Description="Egress to Web Server", IpProtocol="TCP", FromPort=443, ToPort=443, GroupId=Ref(webALBSG))
 
 
 
 t = Template()
 
-t.add_parameter(vpc)
+t.add_version('2010-09-09')
+
+t.add_description("""\
+AWS CloudFormation BLAH \
+**WARNING** This template creates an Amazon EC2 instance. You will be billed \
+for the AWS resources used if you create a stack from this template.""")
+
+t.add_parameter(networkingStackName)
 # t.add_resource(closeEgress)
 t.add_resource(dbSG)
 t.add_resource(appInstanceSG)
@@ -74,6 +80,12 @@ t.add_resource(webIngress)
 t.add_resource(webEngress)
 t.add_resource(webALBEngress)
 t.add_resource(webALBIngress)
+
+t.add_output(Output("WebALBSG",Value=Ref(webALBSG), Export=Export(Name(Join("-", [Ref("AWS::StackName"), "WebALBSG"])))))
+t.add_output(Output("WebInstanceSG",Value=Ref(webInstanceSG), Export=Export(Name(Join("-", [Ref("AWS::StackName"), "WebInstanceSG"])))))
+t.add_output(Output("AppALBSG",Value=Ref(appALBSG), Export=Export(Name(Join("-", [Ref("AWS::StackName"), "AppALBSG"])))))
+t.add_output(Output("AppInstanceSG",Value=Ref(appInstanceSG), Export=Export(Name(Join("-", [Ref("AWS::StackName"), "AppInstanceSG"])))))
+t.add_output(Output("DBSG",Value=Ref(dbSG), Export=Export(Name(Join("-", [Ref("AWS::StackName"), "DBSG"])))))
 
 file = open('firewall.json','w')
 file.write(t.to_json())

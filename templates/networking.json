@@ -2,6 +2,150 @@
     "AWSTemplateFormatVersion": "2010-09-09",
     "Description": "AWS CloudFormation BLAH **WARNING** This template creates an Amazon EC2 instance. You will be billed for the AWS resources used if you create a stack from this template.",
     "Outputs": {
+        "Subnet1": {
+            "Export": {
+                "Name": {
+                    "Fn::Join": [
+                        "-",
+                        [
+                            {
+                                "Ref": "AWS::StackName"
+                            },
+                            "SubnetId1"
+                        ]
+                    ]
+                }
+            },
+            "Value": {
+                "Ref": "Subnet1"
+            }
+        },
+        "Subnet2": {
+            "Export": {
+                "Name": {
+                    "Fn::Join": [
+                        "-",
+                        [
+                            {
+                                "Ref": "AWS::StackName"
+                            },
+                            "SubnetId2"
+                        ]
+                    ]
+                }
+            },
+            "Value": {
+                "Ref": "Subnet2"
+            }
+        },
+        "Subnet3": {
+            "Export": {
+                "Name": {
+                    "Fn::Join": [
+                        "-",
+                        [
+                            {
+                                "Ref": "AWS::StackName"
+                            },
+                            "SubnetId3"
+                        ]
+                    ]
+                }
+            },
+            "Value": {
+                "Ref": "Subnet3"
+            }
+        },
+        "Subnet4": {
+            "Export": {
+                "Name": {
+                    "Fn::Join": [
+                        "-",
+                        [
+                            {
+                                "Ref": "AWS::StackName"
+                            },
+                            "SubnetId4"
+                        ]
+                    ]
+                }
+            },
+            "Value": {
+                "Ref": "Subnet4"
+            }
+        },
+        "Subnet5": {
+            "Export": {
+                "Name": {
+                    "Fn::Join": [
+                        "-",
+                        [
+                            {
+                                "Ref": "AWS::StackName"
+                            },
+                            "SubnetId5"
+                        ]
+                    ]
+                }
+            },
+            "Value": {
+                "Ref": "Subnet5"
+            }
+        },
+        "Subnet6": {
+            "Export": {
+                "Name": {
+                    "Fn::Join": [
+                        "-",
+                        [
+                            {
+                                "Ref": "AWS::StackName"
+                            },
+                            "SubnetId6"
+                        ]
+                    ]
+                }
+            },
+            "Value": {
+                "Ref": "Subnet6"
+            }
+        },
+        "Subnet7": {
+            "Export": {
+                "Name": {
+                    "Fn::Join": [
+                        "-",
+                        [
+                            {
+                                "Ref": "AWS::StackName"
+                            },
+                            "SubnetId7"
+                        ]
+                    ]
+                }
+            },
+            "Value": {
+                "Ref": "Subnet7"
+            }
+        },
+        "Subnet8": {
+            "Export": {
+                "Name": {
+                    "Fn::Join": [
+                        "-",
+                        [
+                            {
+                                "Ref": "AWS::StackName"
+                            },
+                            "SubnetId8"
+                        ]
+                    ]
+                }
+            },
+            "Value": {
+                "Ref": "Subnet8"
+            }
+        },
         "VPC": {
             "Export": {
                 "Name": {

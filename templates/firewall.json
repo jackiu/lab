@@ -1,68 +1,107 @@
 {
+    "AWSTemplateFormatVersion": "2010-09-09",
+    "Description": "AWS CloudFormation BLAH **WARNING** This template creates an Amazon EC2 instance. You will be billed for the AWS resources used if you create a stack from this template.",
+    "Outputs": {
+        "AppALBSG": {
+            "Export": {
+                "Name": {
+                    "Fn::Join": [
+                        "-",
+                        [
+                            {
+                                "Ref": "AWS::StackName"
+                            },
+                            "AppALBSG"
+                        ]
+                    ]
+                }
+            },
+            "Value": {
+                "Ref": "AppALBSG"
+            }
+        },
+        "AppInstanceSG": {
+            "Export": {
+                "Name": {
+                    "Fn::Join": [
+                        "-",
+                        [
+                            {
+                                "Ref": "AWS::StackName"
+                            },
+                            "AppInstanceSG"
+                        ]
+                    ]
+                }
+            },
+            "Value": {
+                "Ref": "AppInstanceSG"
+            }
+        },
+        "DBSG": {
+            "Export": {
+                "Name": {
+                    "Fn::Join": [
+                        "-",
+                        [
+                            {
+                                "Ref": "AWS::StackName"
+                            },
+                            "DBSG"
+                        ]
+                    ]
+                }
+            },
+            "Value": {
+                "Ref": "DBSG"
+            }
+        },
+        "WebALBSG": {
+            "Export": {
+                "Name": {
+                    "Fn::Join": [
+                        "-",
+                        [
+                            {
+                                "Ref": "AWS::StackName"
+                            },
+                            "WebALBSG"
+                        ]
+                    ]
+                }
+            },
+            "Value": {
+                "Ref": "WebALBSG"
+            }
+        },
+        "WebInstanceSG": {
+            "Export": {
+                "Name": {
+                    "Fn::Join": [
+                        "-",
+                        [
+                            {
+                                "Ref": "AWS::StackName"
+                            },
+                            "WebInstanceSG"
+                        ]
+                    ]
+                }
+            },
+            "Value": {
+                "Ref": "WebInstanceSG"
+            }
+        }
+    },
     "Parameters": {
-        "VPC": {
-            "Description": "VPC",
+        "NetworkingStackName": {
+            "Default": "Networking-Stack",
+            "Description": "NetworkingStackName",
             "Type": "String"
         }
     },
     "Resources": {
-        "AppALBSG": {
-            "Properties": {
-                "GroupDescription": "Application Load Balancer Security Group",
-                "GroupName": "App ALB SG",
-                "VpcId": {
-                    "Ref": "VPC"
-                }
-            },
-            "Type": "AWS::EC2::SecurityGroup"
-        },
-        "AppInstanceSG": {
-            "Properties": {
-                "GroupDescription": "Application Instance Security Group",
-                "GroupName": "App Instance SG",
-                "VpcId": {
-                    "Ref": "VPC"
-                }
-            },
-            "Type": "AWS::EC2::SecurityGroup"
-        },
-        "DBSG": {
-            "Properties": {
-                "GroupDescription": "Database Security Group",
-                "GroupName": "DB SG",
-                "SecurityGroupEgress": [
-                    {
-                        "CidrIp": "127.0.0.1/32",
-                        "IpProtocol": "-1"
-                    }
-                ],
-                "VpcId": {
-                    "Ref": "VPC"
-                }
-            },
-            "Type": "AWS::EC2::SecurityGroup"
-        },
-        "WebALBSG": {
-            "Properties": {
-                "GroupDescription": "ALB Security Group",
-                "GroupName": "ALB SG",
-                "VpcId": {
-                    "Ref": "VPC"
-                }
-            },
-            "Type": "AWS::EC2::SecurityGroup"
-        },
-        "WebInstanceSG": {
-            "Properties": {
-                "GroupDescription": "Web Instance Security Group",
-                "GroupName": "Web Instance SG",
-                "VpcId": {
-                    "Ref": "VPC"
-                }
-            },
-            "Type": "AWS::EC2::SecurityGroup"
-        },
-        "appALBEngress": {
+        "AppALBEngress": {
             "Properties": {
                 "Description": "App ALB Egress to App Instance",
                 "DestinationSecurityGroupId": {
@@ -77,7 +116,7 @@
             },
             "Type": "AWS::EC2::SecurityGroupEgress"
         },
-        "appALBIngress": {
+        "AppALBIngress": {
             "Properties": {
                 "Description": "App ALB Ingress from App Instance",
                 "FromPort": 443,
@@ -92,7 +131,19 @@
             },
             "Type": "AWS::EC2::SecurityGroupIngress"
         },
-        "appEngress": {
+        "AppALBSG": {
+            "Properties": {
+                "GroupDescription": "Application Load Balancer Security Group",
+                "GroupName": "App ALB SG",
+                "VpcId": {
+                    "Fn::ImportValue": {
+                        "Fn::Sub": "${NetworkingStackName}-VPCId"
+                    }
+                }
+            },
+            "Type": "AWS::EC2::SecurityGroup"
+        },
+        "AppEngress": {
             "Properties": {
                 "Description": "App Server Egress to DB",
                 "DestinationSecurityGroupId": {
@@ -107,7 +158,7 @@
             },
             "Type": "AWS::EC2::SecurityGroupEgress"
         },
-        "appIngress": {
+        "AppIngress": {
             "Properties": {
                 "Description": "App Server Ingress from Internal Application Load Balancer",
                 "FromPort": 8443,
@@ -122,7 +173,19 @@
             },
             "Type": "AWS::EC2::SecurityGroupIngress"
         },
-        "dbIngress": {
+        "AppInstanceSG": {
+            "Properties": {
+                "GroupDescription": "Application Instance Security Group",
+                "GroupName": "App Instance SG",
+                "VpcId": {
+                    "Fn::ImportValue": {
+                        "Fn::Sub": "${NetworkingStackName}-VPCId"
+                    }
+                }
+            },
+            "Type": "AWS::EC2::SecurityGroup"
+        },
+        "DBIngress": {
             "Properties": {
                 "Description": "db Ingress from app instance",
                 "FromPort": 5432,
@@ -137,7 +200,25 @@
             },
             "Type": "AWS::EC2::SecurityGroupIngress"
         },
-        "webALBEngress": {
+        "DBSG": {
+            "Properties": {
+                "GroupDescription": "Database Security Group",
+                "GroupName": "DB SG",
+                "SecurityGroupEgress": [
+                    {
+                        "CidrIp": "127.0.0.1/32",
+                        "IpProtocol": "-1"
+                    }
+                ],
+                "VpcId": {
+                    "Fn::ImportValue": {
+                        "Fn::Sub": "${NetworkingStackName}-VPCId"
+                    }
+                }
+            },
+            "Type": "AWS::EC2::SecurityGroup"
+        },
+        "WebALBEngress": {
             "Properties": {
                 "Description": "Egress to Web Server",
                 "DestinationSecurityGroupId": {
@@ -152,7 +233,7 @@
             },
             "Type": "AWS::EC2::SecurityGroupEgress"
         },
-        "webALBIngress": {
+        "WebALBIngress": {
             "Properties": {
                 "CidrIp": "0.0.0.0/0",
                 "Description": "Opened Ingress",
@@ -165,7 +246,19 @@
             },
             "Type": "AWS::EC2::SecurityGroupIngress"
         },
-        "webEngress": {
+        "WebALBSG": {
+            "Properties": {
+                "GroupDescription": "ALB Security Group",
+                "GroupName": "ALB SG",
+                "VpcId": {
+                    "Fn::ImportValue": {
+                        "Fn::Sub": "${NetworkingStackName}-VPCId"
+                    }
+                }
+            },
+            "Type": "AWS::EC2::SecurityGroup"
+        },
+        "WebEngress": {
             "Properties": {
                 "Description": "Web Server Egress to Internal Application Load Balancer",
                 "DestinationSecurityGroupId": {
@@ -180,7 +273,7 @@
             },
             "Type": "AWS::EC2::SecurityGroupEgress"
         },
-        "webIngress": {
+        "WebIngress": {
             "Properties": {
                 "Description": "Web Server Ingress from Web Application Load Balancer",
                 "FromPort": 443,
@@ -194,6 +287,18 @@
                 "ToPort": 443
             },
             "Type": "AWS::EC2::SecurityGroupIngress"
+        },
+        "WebInstanceSG": {
+            "Properties": {
+                "GroupDescription": "Web Instance Security Group",
+                "GroupName": "Web Instance SG",
+                "VpcId": {
+                    "Fn::ImportValue": {
+                        "Fn::Sub": "${NetworkingStackName}-VPCId"
+                    }
+                }
+            },
+            "Type": "AWS::EC2::SecurityGroup"
         }
     }
 }

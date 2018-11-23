@@ -93,6 +93,9 @@ for s in srtas:
 
 
 t.add_output(Output("VPC",Value=Ref(vpc), Export=Export(Name(Join("-", [Ref("AWS::StackName"), "VPCId"])))))
+for idx, subnet in enumerate(subnets):
+    t.add_output(Output("Subnet" + str(idx+1), Value=Ref(subnet), Export=Export(Name(Join("-", [Ref("AWS::StackName"), "SubnetId" + str(idx+1)])))))
+
 file = open('networking.json','w')
 file.write(t.to_json())
 
