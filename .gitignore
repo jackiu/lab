@@ -1,1 +1,3 @@
 py/__pycache__/*
+templates/taskcat_outputs/*
+py/test.py

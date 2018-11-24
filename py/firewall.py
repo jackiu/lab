@@ -2,8 +2,7 @@ from troposphere import Join, Output, Export, Name, ImportValue, Sub
 from troposphere import Parameter, Ref, Tags, Template, GetAZs, GetAtt, Select
 
 from troposphere.ec2 import SecurityGroupIngress, SecurityGroupEgress, SecurityGroup
-
-
+from troposphere.constants import SSH_PORT, HTTPS_PORT, POSTGRESQL_PORT
 
 everywhereCIDR = "0.0.0.0/0"
 localCIDR = "127.0.0.1/32"
@@ -38,21 +37,44 @@ webALBSG = SecurityGroup( "WebALBSG", GroupName="ALB SG",
                     GroupDescription="ALB Security Group", 
                     VpcId=vpc )
 
-dbIngress = SecurityGroupIngress("DBIngress", SourceSecurityGroupId=Ref(appInstanceSG), Description="db Ingress from app instance", IpProtocol="TCP", FromPort=5432, ToPort=5432, GroupId=Ref(dbSG))
+bastionHostSG = SecurityGroup( "BastionHostSG", GroupName="Bastion Host SG", 
+                    GroupDescription="Bastion Host Security Group", 
+                    VpcId=vpc )
 
-appIngress = SecurityGroupIngress("AppIngress", SourceSecurityGroupId=Ref(appALBSG), Description="App Server Ingress from Internal Application Load Balancer", IpProtocol="TCP", FromPort=8443, ToPort=8443, GroupId=Ref(appInstanceSG))
-appEngress = SecurityGroupEgress("AppEngress", DestinationSecurityGroupId=Ref(dbSG), Description="App Server Egress to DB", IpProtocol="TCP", FromPort=5432, ToPort=5432, GroupId=Ref(appInstanceSG))
+dbIngress = SecurityGroupIngress("DBIngress", SourceSecurityGroupId=Ref(appInstanceSG), Description="db Ingress from app instance", 
+                                    IpProtocol="TCP", FromPort=POSTGRESQL_PORT, ToPort=POSTGRESQL_PORT, GroupId=Ref(dbSG))
 
-appALBIngress = SecurityGroupIngress("AppALBIngress", SourceSecurityGroupId=Ref(webInstanceSG), Description="App ALB Ingress from App Instance", IpProtocol="TCP", ToPort=443, FromPort=443, GroupId=Ref(appALBSG))
-appALBEngress = SecurityGroupEgress("AppALBEngress", DestinationSecurityGroupId=Ref(dbSG), Description="App ALB Egress to App Instance", IpProtocol="TCP", FromPort=8443, ToPort=8443, GroupId=Ref(appALBSG))
-
-webIngress = SecurityGroupIngress("WebIngress", SourceSecurityGroupId=Ref(webALBSG), Description="Web Server Ingress from Web Application Load Balancer", IpProtocol="TCP", ToPort=443, FromPort=443, GroupId=Ref(webInstanceSG))
-webEngress = SecurityGroupEgress("WebEngress", DestinationSecurityGroupId=Ref(appALBSG), Description="Web Server Egress to Internal Application Load Balancer", IpProtocol="TCP", FromPort=443, ToPort=443, GroupId=Ref(webInstanceSG))
-
-webALBIngress = SecurityGroupIngress("WebALBIngress", CidrIp=everywhereCIDR, Description="Opened Ingress", IpProtocol="TCP", ToPort=443, FromPort=443, GroupId=Ref(webALBSG))
-webALBEngress = SecurityGroupEgress("WebALBEngress", DestinationSecurityGroupId=Ref(webInstanceSG), Description="Egress to Web Server", IpProtocol="TCP", FromPort=443, ToPort=443, GroupId=Ref(webALBSG))
+appIngress1 = SecurityGroupIngress("AppIngress1", SourceSecurityGroupId=Ref(appALBSG), Description="App Server Ingress from Internal Application Load Balancer", 
+                                    IpProtocol="TCP", FromPort=8443, ToPort=8443, GroupId=Ref(appInstanceSG))
+appIngress2 = SecurityGroupIngress("AppIngress2", SourceSecurityGroupId=Ref(appALBSG), Description="App Server Ingress from Bastion Host", 
+                                    IpProtocol="TCP", FromPort=SSH_PORT, ToPort=SSH_PORT, GroupId=Ref(appInstanceSG))
+appEngress = SecurityGroupEgress("AppEngress", DestinationSecurityGroupId=Ref(dbSG), Description="App Server Egress to DB", 
+                                    IpProtocol="TCP", FromPort=POSTGRESQL_PORT, ToPort=POSTGRESQL_PORT, GroupId=Ref(appInstanceSG))
 
 
+appALBIngress = SecurityGroupIngress("AppALBIngress", SourceSecurityGroupId=Ref(webInstanceSG), Description="App ALB Ingress from App Instance", 
+                                    IpProtocol="TCP", ToPort=HTTPS_PORT, FromPort=HTTPS_PORT, GroupId=Ref(appALBSG))
+appALBEngress = SecurityGroupEgress("AppALBEngress", DestinationSecurityGroupId=Ref(dbSG), Description="App ALB Egress to App Instance", 
+                                    IpProtocol="TCP", FromPort=8443, ToPort=8443, GroupId=Ref(appALBSG))
+
+
+webIngress1 = SecurityGroupIngress("WebIngress1", SourceSecurityGroupId=Ref(webALBSG), Description="Web Server Ingress from Web Application Load Balancer", 
+                                    IpProtocol="TCP", ToPort=HTTPS_PORT, FromPort=HTTPS_PORT, GroupId=Ref(webInstanceSG))
+webIngress2 = SecurityGroupIngress("WebIngress2", SourceSecurityGroupId=Ref(webALBSG), Description="Web Server Ingress from Bastion Host", 
+                                    IpProtocol="TCP", ToPort=SSH_PORT, FromPort=SSH_PORT, GroupId=Ref(webInstanceSG))
+webEngress = SecurityGroupEgress("WebEngress", DestinationSecurityGroupId=Ref(appALBSG), Description="Web Server Egress to Internal Application Load Balancer", 
+                                    IpProtocol="TCP", FromPort=HTTPS_PORT, ToPort=HTTPS_PORT, GroupId=Ref(webInstanceSG))
+
+webALBIngress = SecurityGroupIngress("WebALBIngress", CidrIp=everywhereCIDR, Description="Opened Ingress", IpProtocol="TCP", ToPort=HTTPS_PORT, FromPort=HTTPS_PORT, GroupId=Ref(webALBSG))
+webALBEngress = SecurityGroupEgress("WebALBEngress", DestinationSecurityGroupId=Ref(webInstanceSG), Description="Egress to Web Server", IpProtocol="TCP", FromPort=HTTPS_PORT, ToPort=HTTPS_PORT, GroupId=Ref(webALBSG))
+
+
+bastionHostIngress = SecurityGroupIngress("BastionHostIngress", CidrIp=everywhereCIDR, Description="Bastion Host Ingress", 
+                                        IpProtocol="TCP", ToPort=SSH_PORT, FromPort=SSH_PORT, GroupId=Ref(bastionHostSG))
+bastionHostEngress = SecurityGroupEgress("BastionHostEngressWeb", DestinationSecurityGroupId=Ref(webInstanceSG), Description="Egress to Web Instances", 
+                                        IpProtocol="TCP", FromPort=SSH_PORT, ToPort=SSH_PORT, GroupId=Ref(bastionHostSG))
+bastionHostEngress2 = SecurityGroupEgress("BastionHostEngressApp", DestinationSecurityGroupId=Ref(appInstanceSG), Description="Egress to Web Instances", 
+                                        IpProtocol="TCP", FromPort=SSH_PORT, ToPort=SSH_PORT, GroupId=Ref(bastionHostSG))
 
 t = Template()
 
@@ -70,22 +92,30 @@ t.add_resource(appInstanceSG)
 t.add_resource(appALBSG)
 t.add_resource(webInstanceSG)
 t.add_resource(webALBSG)
+t.add_resource(bastionHostSG)
 
 t.add_resource(dbIngress)
-t.add_resource(appIngress)
+t.add_resource(appIngress1)
+t.add_resource(appIngress2)
 t.add_resource(appEngress)
 t.add_resource(appALBIngress)
 t.add_resource(appALBEngress)
-t.add_resource(webIngress)
+t.add_resource(webIngress1)
+t.add_resource(webIngress2)
 t.add_resource(webEngress)
 t.add_resource(webALBEngress)
 t.add_resource(webALBIngress)
+t.add_resource(bastionHostIngress)
+t.add_resource(bastionHostEngress)
+t.add_resource(bastionHostEngress2)
+
 
 t.add_output(Output("WebALBSG",Value=Ref(webALBSG), Export=Export(Name(Join("-", [Ref("AWS::StackName"), "WebALBSG"])))))
 t.add_output(Output("WebInstanceSG",Value=Ref(webInstanceSG), Export=Export(Name(Join("-", [Ref("AWS::StackName"), "WebInstanceSG"])))))
 t.add_output(Output("AppALBSG",Value=Ref(appALBSG), Export=Export(Name(Join("-", [Ref("AWS::StackName"), "AppALBSG"])))))
 t.add_output(Output("AppInstanceSG",Value=Ref(appInstanceSG), Export=Export(Name(Join("-", [Ref("AWS::StackName"), "AppInstanceSG"])))))
 t.add_output(Output("DBSG",Value=Ref(dbSG), Export=Export(Name(Join("-", [Ref("AWS::StackName"), "DBSG"])))))
+t.add_output(Output("BastionSG",Value=Ref(bastionHostSG), Export=Export(Name(Join("-", [Ref("AWS::StackName"), "BastionSG"])))))
 
 file = open('firewall.json','w')
 file.write(t.to_json())

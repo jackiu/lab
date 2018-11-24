@@ -1,0 +1,197 @@
+{
+    "AWSTemplateFormatVersion": "2010-09-09",
+    "Description": "AWS CloudFormation BLAH **WARNING** This template creates an Amazon EC2 instance. You will be billed for the AWS resources used if you create a stack from this template.",
+    "Mappings": {
+        "RegionMap": {
+            "ap-northeast-1": {
+                "AMI": "ami-0a2de1c3b415889d2"
+            },
+            "ap-southeast-1": {
+                "AMI": "ami-0b84d2c53ad5250c2"
+            },
+            "eu-west-1": {
+                "AMI": "ami-09693313102a30b2c"
+            },
+            "sa-east-1": {
+                "AMI": "ami-0112d42866980b373"
+            },
+            "us-east-1": {
+                "AMI": "ami-009d6802948d06e52"
+            },
+            "us-east-2": {
+                "AMI": "ami-02e680c4540db351e"
+            },
+            "us-west-1": {
+                "AMI": "ami-011b6930a81cd6aaf"
+            },
+            "us-west-2": {
+                "AMI": "ami-01bbe152bf19d0289"
+            }
+        }
+    },
+    "Parameters": {
+        "FirewallStackName": {
+            "Default": "Firewall-Stack",
+            "Description": "=FirewallStackName",
+            "Type": "String"
+        },
+        "IAMStackName": {
+            "Default": "IAM-Stack",
+            "Description": "IAMStackName",
+            "Type": "String"
+        },
+        "NetworkingStackName": {
+            "Default": "Networking-Stack",
+            "Description": "NetworkingStackName",
+            "Type": "String"
+        },
+        "PubCertARN": {
+            "Default": "arn:aws:acm:us-east-2:350032182433:certificate/355f0f79-d86d-4b19-9e0a-a740d9914b83",
+            "Description": "Public Cert ARN for Web Application Load Balancer",
+            "Type": "String"
+        }
+    },
+    "Resources": {
+        "WebASG": {
+            "Properties": {
+                "AutoScalingGroupName": "WebASG",
+                "DesiredCapacity": "2",
+                "LaunchTemplate": {
+                    "LaunchTemplateId": {
+                        "Ref": "WebInstanceTemplate"
+                    },
+                    "Version": "1"
+                },
+                "MaxSize": "6",
+                "MinSize": "2",
+                "Tags": [
+                    {
+                        "Key": "Name",
+                        "PropagateAtLaunch": true,
+                        "Value": "WebASGInstance"
+                    }
+                ],
+                "TargetGroupARNs": [
+                    {
+                        "Ref": "WebLBTG"
+                    }
+                ],
+                "VPCZoneIdentifier": [
+                    {
+                        "Fn::ImportValue": {
+                            "Fn::Sub": "${NetworkingStackName}-SubnetId3"
+                        }
+                    },
+                    {
+                        "Fn::ImportValue": {
+                            "Fn::Sub": "${NetworkingStackName}-SubnetId4"
+                        }
+                    }
+                ]
+            },
+            "Type": "AWS::AutoScaling::AutoScalingGroup"
+        },
+        "WebInstanceTemplate": {
+            "Properties": {
+                "LaunchTemplateData": {
+                    "IamInstanceProfile": {
+                        "Arn": {
+                            "Fn::ImportValue": {
+                                "Fn::Sub": "${IAMStackName}-InstanceProfileArn"
+                            }
+                        }
+                    },
+                    "ImageId": {
+                        "Fn::FindInMap": [
+                            "RegionMap",
+                            {
+                                "Ref": "AWS::Region"
+                            },
+                            "AMI"
+                        ]
+                    },
+                    "InstanceType": "m5.large",
+                    "KeyName": "mb",
+                    "SecurityGroupIds": [
+                        {
+                            "Fn::ImportValue": {
+                                "Fn::Sub": "${FirewallStackName}-WebInstanceSG"
+                            }
+                        }
+                    ],
+                    "UserData": "CiMhL2Jpbi9iYXNoCgp5dW0gdXBkYXRlIC15Cnl1bSBpbnN0YWxsIC15IGh0dHBkIAoKc3VkbyB5dW0gaW5zdGFsbCAteSBtb2Rfc3NsCgphd3MgczMgY3AgczM6Ly9qYWNraXUtZ2VuZXJpYy9zc2wuY29uZiAvZXRjL2h0dHBkL2NvbmYuZC9zc2wuY29uZgoKc3lzdGVtY3RsIHN0YXJ0IGh0dHBkCnN5c3RlbWN0bCBlbmFibGUgaHR0cGQKdXNlcm1vZCAtYSAtRyBhcGFjaGUgZWMyLXVzZXIKY2hvd24gLVIgZWMyLXVzZXI6YXBhY2hlIC92YXIvd3d3CmNobW9kIDI3NzUgL3Zhci93d3cKZmluZCAvdmFyL3d3dyAtdHlwZSBkIC1leGVjIGNobW9kIDI3NzUge30gXDsKZmluZCAvdmFyL3d3dyAtdHlwZSBmIC1leGVjIGNobW9kIDA2NjQge30gXDsKCgplY2hvICAiaGVsbG8gd29ybGQiID4gIC92YXIvd3d3L2h0bWwvaGVsbG8uaHRtbAo="
+                },
+                "LaunchTemplateName": "WebInstanceTemplate"
+            },
+            "Type": "AWS::EC2::LaunchTemplate"
+        },
+        "WebLB": {
+            "Properties": {
+                "Name": "WebTierLoadBalancer",
+                "Scheme": "internet-facing",
+                "SecurityGroups": [
+                    {
+                        "Fn::ImportValue": {
+                            "Fn::Sub": "${FirewallStackName}-WebALBSG"
+                        }
+                    }
+                ],
+                "Subnets": [
+                    {
+                        "Fn::ImportValue": {
+                            "Fn::Sub": "${NetworkingStackName}-SubnetId1"
+                        }
+                    },
+                    {
+                        "Fn::ImportValue": {
+                            "Fn::Sub": "${NetworkingStackName}-SubnetId2"
+                        }
+                    }
+                ],
+                "Type": "application"
+            },
+            "Type": "AWS::ElasticLoadBalancingV2::LoadBalancer"
+        },
+        "WebLBListener": {
+            "Properties": {
+                "Certificates": [
+                    {
+                        "CertificateArn": {
+                            "Ref": "PubCertARN"
+                        }
+                    }
+                ],
+                "DefaultActions": [
+                    {
+                        "TargetGroupArn": {
+                            "Ref": "WebLBTG"
+                        },
+                        "Type": "forward"
+                    }
+                ],
+                "LoadBalancerArn": {
+                    "Ref": "WebLB"
+                },
+                "Port": 443,
+                "Protocol": "HTTPS",
+                "SslPolicy": "ELBSecurityPolicy-FS-2018-06"
+            },
+            "Type": "AWS::ElasticLoadBalancingV2::Listener"
+        },
+        "WebLBTG": {
+            "Properties": {
+                "HealthCheckPath": "/hello.html",
+                "Name": "WebTierTargetGroup",
+                "Port": 443,
+                "Protocol": "HTTPS",
+                "TargetType": "instance",
+                "VpcId": {
+                    "Fn::ImportValue": {
+                        "Fn::Sub": "${NetworkingStackName}-VPCId"
+                    }
+                }
+            },
+            "Type": "AWS::ElasticLoadBalancingV2::TargetGroup"
+        }
+    }
+}

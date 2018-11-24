@@ -38,6 +38,24 @@
                 "Ref": "AppInstanceSG"
             }
         },
+        "BastionSG": {
+            "Export": {
+                "Name": {
+                    "Fn::Join": [
+                        "-",
+                        [
+                            {
+                                "Ref": "AWS::StackName"
+                            },
+                            "BastionSG"
+                        ]
+                    ]
+                }
+            },
+            "Value": {
+                "Ref": "BastionHostSG"
+            }
+        },
         "DBSG": {
             "Export": {
                 "Name": {
@@ -158,7 +176,7 @@
             },
             "Type": "AWS::EC2::SecurityGroupEgress"
         },
-        "AppIngress": {
+        "AppIngress1": {
             "Properties": {
                 "Description": "App Server Ingress from Internal Application Load Balancer",
                 "FromPort": 8443,
@@ -173,10 +191,80 @@
             },
             "Type": "AWS::EC2::SecurityGroupIngress"
         },
+        "AppIngress2": {
+            "Properties": {
+                "Description": "App Server Ingress from Bastion Host",
+                "FromPort": 22,
+                "GroupId": {
+                    "Ref": "AppInstanceSG"
+                },
+                "IpProtocol": "TCP",
+                "SourceSecurityGroupId": {
+                    "Ref": "AppALBSG"
+                },
+                "ToPort": 22
+            },
+            "Type": "AWS::EC2::SecurityGroupIngress"
+        },
         "AppInstanceSG": {
             "Properties": {
                 "GroupDescription": "Application Instance Security Group",
                 "GroupName": "App Instance SG",
+                "VpcId": {
+                    "Fn::ImportValue": {
+                        "Fn::Sub": "${NetworkingStackName}-VPCId"
+                    }
+                }
+            },
+            "Type": "AWS::EC2::SecurityGroup"
+        },
+        "BastionHostEngressApp": {
+            "Properties": {
+                "Description": "Egress to Web Instances",
+                "DestinationSecurityGroupId": {
+                    "Ref": "AppInstanceSG"
+                },
+                "FromPort": 22,
+                "GroupId": {
+                    "Ref": "BastionHostSG"
+                },
+                "IpProtocol": "TCP",
+                "ToPort": 22
+            },
+            "Type": "AWS::EC2::SecurityGroupEgress"
+        },
+        "BastionHostEngressWeb": {
+            "Properties": {
+                "Description": "Egress to Web Instances",
+                "DestinationSecurityGroupId": {
+                    "Ref": "WebInstanceSG"
+                },
+                "FromPort": 22,
+                "GroupId": {
+                    "Ref": "BastionHostSG"
+                },
+                "IpProtocol": "TCP",
+                "ToPort": 22
+            },
+            "Type": "AWS::EC2::SecurityGroupEgress"
+        },
+        "BastionHostIngress": {
+            "Properties": {
+                "CidrIp": "0.0.0.0/0",
+                "Description": "Bastion Host Ingress",
+                "FromPort": 22,
+                "GroupId": {
+                    "Ref": "BastionHostSG"
+                },
+                "IpProtocol": "TCP",
+                "ToPort": 22
+            },
+            "Type": "AWS::EC2::SecurityGroupIngress"
+        },
+        "BastionHostSG": {
+            "Properties": {
+                "GroupDescription": "Bastion Host Security Group",
+                "GroupName": "Bastion Host SG",
                 "VpcId": {
                     "Fn::ImportValue": {
                         "Fn::Sub": "${NetworkingStackName}-VPCId"
@@ -273,7 +361,7 @@
             },
             "Type": "AWS::EC2::SecurityGroupEgress"
         },
-        "WebIngress": {
+        "WebIngress1": {
             "Properties": {
                 "Description": "Web Server Ingress from Web Application Load Balancer",
                 "FromPort": 443,
@@ -285,6 +373,21 @@
                     "Ref": "WebALBSG"
                 },
                 "ToPort": 443
+            },
+            "Type": "AWS::EC2::SecurityGroupIngress"
+        },
+        "WebIngress2": {
+            "Properties": {
+                "Description": "Web Server Ingress from Bastion Host",
+                "FromPort": 22,
+                "GroupId": {
+                    "Ref": "WebInstanceSG"
+                },
+                "IpProtocol": "TCP",
+                "SourceSecurityGroupId": {
+                    "Ref": "WebALBSG"
+                },
+                "ToPort": 22
             },
             "Type": "AWS::EC2::SecurityGroupIngress"
         },

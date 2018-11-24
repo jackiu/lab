@@ -10,21 +10,27 @@ global:
     - us-west-2
   reporting: true
 tests:
-  scenario-1:
-    parameter_input: debug-iam.json
+  # scenario-1:
+  #   parameter_input: debug-iam.json
+  #   regions:
+  #     - us-west-1
+  #     - us-east-1
+  #   template_file: iam.json
+  # scenario-2:
+  #   parameter_input: debug-networking.json
+  #   regions:
+  #     - us-west-1
+  #     - us-east-1
+  #   template_file: networking.json
+  # scenario-3:
+  #   parameter_input: debug-firewall.json
+  #   regions:
+  #     - us-west-1
+  #     - us-east-1
+  #   template_file: firewall.json
+  scenario-4:
+    parameter_input: debug-webtier.json
     regions:
       - us-west-1
       - us-east-1
-    template_file: iam.json
-  scenario-2:
-    parameter_input: debug-networking.json
-    regions:
-      - us-west-1
-      - us-east-1
-    template_file: networking.json
-  scenario-3:
-    parameter_input: debug-firewall.json
-    regions:
-      - us-west-1
-      - us-east-1
-    template_file: firewall.json
+    template_file: webtier.json
