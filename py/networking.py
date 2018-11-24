@@ -1,7 +1,7 @@
 from troposphere import Join, Output
 from troposphere import Parameter, Ref, Tags, Template, GetAZs, GetAtt, Select,Export, Name
 from troposphere.ec2 import VPC
-from troposphere.ec2 import Subnet, InternetGateway, VPCGatewayAttachment, NatGateway
+from troposphere.ec2 import Subnet, InternetGateway, VPCGatewayAttachment, NatGateway, VPCEndpoint
 from troposphere.ec2 import EIP, RouteTable, Route, SubnetRouteTableAssociation
 from troposphere.ec2 import SecurityGroupIngress, SecurityGroupEgress, SecurityGroup
 
@@ -26,10 +26,14 @@ t = Template()
 vpc = VPC("VPC" , CidrBlock=vpcCIDR)
 
 for i in range(1, 9):
+    publicIP = False
+    if i <= 2:
+        publicIP = True
     subnets.append( Subnet("Subnet" + str(i),
                     VpcId=Ref(vpc), 
                     CidrBlock = subnetCIDR[i-1],
                     Tags = Tags(Application=Ref("AWS::StackName"), Name=subnetNames[i-1]),
+                    MapPublicIpOnLaunch=publicIP,
                     AvailabilityZone = Select( ((i+1)%2) , GetAZs("")) ) )
 
 igw = InternetGateway("IGW")
@@ -63,6 +67,9 @@ for i in range(2, 8):
         
     srtas.append(SubnetRouteTableAssociation("PrivateRouteTableAsso" + str(i+1) , RouteTableId=Ref(routeTable), SubnetId=Ref(subnets[i])))
 
+vpcEndPoint=VPCEndpoint("S3EndPoint", VpcId=Ref(vpc), RouteTableIds=[Ref(publicRouteTable), Ref(privateRouteTable1), Ref(privateRouteTable2)], 
+                            ServiceName=Join("", ["com.amazonaws.", Ref("AWS::Region"), ".s3"]) )
+
 t.add_version('2010-09-09')
 
 t.add_description("""\
@@ -91,6 +98,7 @@ t.add_resource(privateRoute2)
 for s in srtas:
     t.add_resource(s)
 
+t.add_resource(vpcEndPoint)
 
 t.add_output(Output("VPC",Value=Ref(vpc), Export=Export(Name(Join("-", [Ref("AWS::StackName"), "VPCId"])))))
 for idx, subnet in enumerate(subnets):

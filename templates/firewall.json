@@ -1,6 +1,34 @@
 {
     "AWSTemplateFormatVersion": "2010-09-09",
     "Description": "AWS CloudFormation BLAH **WARNING** This template creates an Amazon EC2 instance. You will be billed for the AWS resources used if you create a stack from this template.",
+    "Mappings": {
+        "RegionMap": {
+            "ap-northeast-1": {
+                "PRE": "pl-61a54008"
+            },
+            "ap-southeast-1": {
+                "PRE": "pl-6fa54006"
+            },
+            "eu-west-1": {
+                "PRE": "pl-6da54004"
+            },
+            "sa-east-1": {
+                "PRE": "pl-6aa54003"
+            },
+            "us-east-1": {
+                "PRE": "pl-63a5400a"
+            },
+            "us-east-2": {
+                "PRE": "pl-7ba54012"
+            },
+            "us-west-1": {
+                "PRE": "pl-6ba54002"
+            },
+            "us-west-2": {
+                "PRE": "pl-68a54001"
+            }
+        }
+    },
     "Outputs": {
         "AppALBSG": {
             "Export": {
@@ -161,7 +189,7 @@
             },
             "Type": "AWS::EC2::SecurityGroup"
         },
-        "AppEngress": {
+        "AppEngress1": {
             "Properties": {
                 "Description": "App Server Egress to DB",
                 "DestinationSecurityGroupId": {
@@ -173,6 +201,27 @@
                 },
                 "IpProtocol": "TCP",
                 "ToPort": 5432
+            },
+            "Type": "AWS::EC2::SecurityGroupEgress"
+        },
+        "AppEngress2": {
+            "Properties": {
+                "Description": "App Server Egress to S3 Endpoint",
+                "DestinationPrefixListId": {
+                    "Fn::FindInMap": [
+                        "RegionMap",
+                        {
+                            "Ref": "AWS::Region"
+                        },
+                        "PRE"
+                    ]
+                },
+                "FromPort": 443,
+                "GroupId": {
+                    "Ref": "AppInstanceSG"
+                },
+                "IpProtocol": "TCP",
+                "ToPort": 443
             },
             "Type": "AWS::EC2::SecurityGroupEgress"
         },
@@ -200,7 +249,7 @@
                 },
                 "IpProtocol": "TCP",
                 "SourceSecurityGroupId": {
-                    "Ref": "AppALBSG"
+                    "Ref": "BastionHostSG"
                 },
                 "ToPort": 22
             },
@@ -220,7 +269,7 @@
         },
         "BastionHostEngressApp": {
             "Properties": {
-                "Description": "Egress to Web Instances",
+                "Description": "Bastion Host Egress to Web Instances",
                 "DestinationSecurityGroupId": {
                     "Ref": "AppInstanceSG"
                 },
@@ -233,9 +282,30 @@
             },
             "Type": "AWS::EC2::SecurityGroupEgress"
         },
+        "BastionHostEngressS3": {
+            "Properties": {
+                "Description": "Bastion Host Egress to S3",
+                "DestinationPrefixListId": {
+                    "Fn::FindInMap": [
+                        "RegionMap",
+                        {
+                            "Ref": "AWS::Region"
+                        },
+                        "PRE"
+                    ]
+                },
+                "FromPort": 443,
+                "GroupId": {
+                    "Ref": "BastionHostSG"
+                },
+                "IpProtocol": "TCP",
+                "ToPort": 443
+            },
+            "Type": "AWS::EC2::SecurityGroupEgress"
+        },
         "BastionHostEngressWeb": {
             "Properties": {
-                "Description": "Egress to Web Instances",
+                "Description": "Bastion Host Egress to Web Instances",
                 "DestinationSecurityGroupId": {
                     "Ref": "WebInstanceSG"
                 },
@@ -346,11 +416,32 @@
             },
             "Type": "AWS::EC2::SecurityGroup"
         },
-        "WebEngress": {
+        "WebEngress1": {
             "Properties": {
                 "Description": "Web Server Egress to Internal Application Load Balancer",
                 "DestinationSecurityGroupId": {
                     "Ref": "AppALBSG"
+                },
+                "FromPort": 443,
+                "GroupId": {
+                    "Ref": "WebInstanceSG"
+                },
+                "IpProtocol": "TCP",
+                "ToPort": 443
+            },
+            "Type": "AWS::EC2::SecurityGroupEgress"
+        },
+        "WebEngress2": {
+            "Properties": {
+                "Description": "Web Server Egress to S3 Endpoint",
+                "DestinationPrefixListId": {
+                    "Fn::FindInMap": [
+                        "RegionMap",
+                        {
+                            "Ref": "AWS::Region"
+                        },
+                        "PRE"
+                    ]
                 },
                 "FromPort": 443,
                 "GroupId": {
@@ -385,7 +476,7 @@
                 },
                 "IpProtocol": "TCP",
                 "SourceSecurityGroupId": {
-                    "Ref": "WebALBSG"
+                    "Ref": "BastionHostSG"
                 },
                 "ToPort": 22
             },

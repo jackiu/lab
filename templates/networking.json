@@ -415,6 +415,37 @@
             },
             "Type": "AWS::EC2::RouteTable"
         },
+        "S3EndPoint": {
+            "Properties": {
+                "RouteTableIds": [
+                    {
+                        "Ref": "PublicRouteTable"
+                    },
+                    {
+                        "Ref": "PrivateRouteTable1"
+                    },
+                    {
+                        "Ref": "PrivateRouteTable2"
+                    }
+                ],
+                "ServiceName": {
+                    "Fn::Join": [
+                        "",
+                        [
+                            "com.amazonaws.",
+                            {
+                                "Ref": "AWS::Region"
+                            },
+                            ".s3"
+                        ]
+                    ]
+                },
+                "VpcId": {
+                    "Ref": "VPC"
+                }
+            },
+            "Type": "AWS::EC2::VPCEndpoint"
+        },
         "Subnet1": {
             "Properties": {
                 "AvailabilityZone": {
@@ -426,6 +457,7 @@
                     ]
                 },
                 "CidrBlock": "192.168.1.0/24",
+                "MapPublicIpOnLaunch": "true",
                 "Tags": [
                     {
                         "Key": "Application",
@@ -455,6 +487,7 @@
                     ]
                 },
                 "CidrBlock": "192.168.2.0/24",
+                "MapPublicIpOnLaunch": "true",
                 "Tags": [
                     {
                         "Key": "Application",
@@ -484,6 +517,7 @@
                     ]
                 },
                 "CidrBlock": "192.168.3.0/24",
+                "MapPublicIpOnLaunch": "false",
                 "Tags": [
                     {
                         "Key": "Application",
@@ -513,6 +547,7 @@
                     ]
                 },
                 "CidrBlock": "192.168.4.0/24",
+                "MapPublicIpOnLaunch": "false",
                 "Tags": [
                     {
                         "Key": "Application",
@@ -542,6 +577,7 @@
                     ]
                 },
                 "CidrBlock": "192.168.5.0/24",
+                "MapPublicIpOnLaunch": "false",
                 "Tags": [
                     {
                         "Key": "Application",
@@ -571,6 +607,7 @@
                     ]
                 },
                 "CidrBlock": "192.168.6.0/24",
+                "MapPublicIpOnLaunch": "false",
                 "Tags": [
                     {
                         "Key": "Application",
@@ -600,6 +637,7 @@
                     ]
                 },
                 "CidrBlock": "192.168.7.0/24",
+                "MapPublicIpOnLaunch": "false",
                 "Tags": [
                     {
                         "Key": "Application",
@@ -629,6 +667,7 @@
                     ]
                 },
                 "CidrBlock": "192.168.8.0/24",
+                "MapPublicIpOnLaunch": "false",
                 "Tags": [
                     {
                         "Key": "Application",

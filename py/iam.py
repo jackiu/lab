@@ -5,7 +5,7 @@ from awacs.sts import AssumeRole
 
 import policies
 
-ec2RolePolicies = ["arn:aws:iam::aws:policy/AmazonS3FullAccess", "arn:aws:iam::aws:policy/AmazonSSMFullAccess"]
+ec2RolePolicies = ["arn:aws:iam::aws:policy/AmazonS3FullAccess", "arn:aws:iam::aws:policy/service-role/AmazonEC2RoleforSSM"]
 
 t = Template()
 

@@ -1,0 +1,118 @@
+{
+    "AWSTemplateFormatVersion": "2010-09-09",
+    "Description": "AWS CloudFormation BLAH **WARNING** This template creates an Amazon EC2 instance. You will be billed for the AWS resources used if you create a stack from this template.",
+    "Mappings": {
+        "RegionMap": {
+            "ap-northeast-1": {
+                "AMI": "ami-0a2de1c3b415889d2"
+            },
+            "ap-southeast-1": {
+                "AMI": "ami-0b84d2c53ad5250c2"
+            },
+            "eu-west-1": {
+                "AMI": "ami-09693313102a30b2c"
+            },
+            "sa-east-1": {
+                "AMI": "ami-0112d42866980b373"
+            },
+            "us-east-1": {
+                "AMI": "ami-009d6802948d06e52"
+            },
+            "us-east-2": {
+                "AMI": "ami-02e680c4540db351e"
+            },
+            "us-west-1": {
+                "AMI": "ami-011b6930a81cd6aaf"
+            },
+            "us-west-2": {
+                "AMI": "ami-01bbe152bf19d0289"
+            }
+        }
+    },
+    "Parameters": {
+        "FirewallStackName": {
+            "Default": "Firewall-Stack",
+            "Description": "=FirewallStackName",
+            "Type": "String"
+        },
+        "IAMStackName": {
+            "Default": "IAM-Stack",
+            "Description": "IAMStackName",
+            "Type": "String"
+        },
+        "NetworkingStackName": {
+            "Default": "Networking-Stack",
+            "Description": "NetworkingStackName",
+            "Type": "String"
+        }
+    },
+    "Resources": {
+        "BastionASG": {
+            "Properties": {
+                "AutoScalingGroupName": "BastionASG",
+                "DesiredCapacity": "1",
+                "LaunchTemplate": {
+                    "LaunchTemplateId": {
+                        "Ref": "BastionHostTemplate"
+                    },
+                    "Version": "1"
+                },
+                "MaxSize": "1",
+                "MinSize": "1",
+                "Tags": [
+                    {
+                        "Key": "Name",
+                        "PropagateAtLaunch": true,
+                        "Value": "BastionHost"
+                    }
+                ],
+                "VPCZoneIdentifier": [
+                    {
+                        "Fn::ImportValue": {
+                            "Fn::Sub": "${NetworkingStackName}-SubnetId1"
+                        }
+                    },
+                    {
+                        "Fn::ImportValue": {
+                            "Fn::Sub": "${NetworkingStackName}-SubnetId2"
+                        }
+                    }
+                ]
+            },
+            "Type": "AWS::AutoScaling::AutoScalingGroup"
+        },
+        "BastionHostTemplate": {
+            "Properties": {
+                "LaunchTemplateData": {
+                    "IamInstanceProfile": {
+                        "Arn": {
+                            "Fn::ImportValue": {
+                                "Fn::Sub": "${IAMStackName}-InstanceProfileArn"
+                            }
+                        }
+                    },
+                    "ImageId": {
+                        "Fn::FindInMap": [
+                            "RegionMap",
+                            {
+                                "Ref": "AWS::Region"
+                            },
+                            "AMI"
+                        ]
+                    },
+                    "InstanceType": "t3.small",
+                    "KeyName": "mb",
+                    "SecurityGroupIds": [
+                        {
+                            "Fn::ImportValue": {
+                                "Fn::Sub": "${FirewallStackName}-BastionSG"
+                            }
+                        }
+                    ]
+                },
+                "LaunchTemplateName": "BastionHostTemplate"
+            },
+            "Type": "AWS::EC2::LaunchTemplate"
+        }
+    }
+}
