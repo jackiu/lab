@@ -2,6 +2,27 @@
     "AWSTemplateFormatVersion": "2010-09-09",
     "Description": "AWS CloudFormation BLAH **WARNING** This template creates an Amazon EC2 instance. You will be billed for the AWS resources used if you create a stack from this template.",
     "Outputs": {
+        "DbKeyArn": {
+            "Export": {
+                "Name": {
+                    "Fn::Join": [
+                        "-",
+                        [
+                            {
+                                "Ref": "AWS::StackName"
+                            },
+                            "DBKeyArn"
+                        ]
+                    ]
+                }
+            },
+            "Value": {
+                "Fn::GetAtt": [
+                    "DBKey",
+                    "Arn"
+                ]
+            }
+        },
         "InstanceProfile": {
             "Export": {
                 "Name": {
@@ -32,6 +53,24 @@
         }
     },
     "Resources": {
+        "DBKey": {
+            "Properties": {
+                "Description": "Key for Aurora Postgres Encryption At Rest",
+                "EnableKeyRotation": "true",
+                "KeyPolicy": {
+                    "Fn::Sub": "\n{\n  \"Version\": \"2012-10-17\",\n  \"Id\": \"key-policy\",\n  \"Statement\": [\n    {\n      \"Sid\": \"Enable IAM User Permissions\",\n      \"Effect\": \"Allow\",\n      \"Principal\": {\n        \"AWS\": \"arn:aws:iam::${AWS::AccountId}:root\"\n      },\n      \"Action\": \"kms:*\",\n      \"Resource\": \"*\"\n    },\n    {\n      \"Sid\": \"Allow use of the key\",\n      \"Effect\": \"Allow\",\n      \"Principal\": {\n        \"AWS\": \"arn:aws:iam::${AWS::AccountId}:role/aws-service-role/rds.amazonaws.com/AWSServiceRoleForRDS\"\n      },\n      \"Action\": [\n        \"kms:Encrypt\",\n        \"kms:Decrypt\",\n        \"kms:ReEncrypt*\",\n        \"kms:GenerateDataKey*\",\n        \"kms:DescribeKey\"\n      ],\n      \"Resource\": \"*\"\n    },\n    {\n      \"Sid\": \"Allow attachment of persistent resources\",\n      \"Effect\": \"Allow\",\n      \"Principal\": {\n        \"AWS\": \"arn:aws:iam::${AWS::AccountId}:role/aws-service-role/rds.amazonaws.com/AWSServiceRoleForRDS\"\n      },\n      \"Action\": [\n        \"kms:CreateGrant\",\n        \"kms:ListGrants\",\n        \"kms:RevokeGrant\"\n      ],\n      \"Resource\": \"*\",\n      \"Condition\": {\n        \"Bool\": {\n          \"kms:GrantIsForAWSResource\": \"true\"\n        }\n      }\n    }\n  ]\n}\n"
+                },
+                "Tags": [
+                    {
+                        "Key": "Application",
+                        "Value": {
+                            "Ref": "AWS::StackName"
+                        }
+                    }
+                ]
+            },
+            "Type": "AWS::KMS::Key"
+        },
         "EC2InstanceProfile": {
             "Properties": {
                 "InstanceProfileName": "EC2InstanceProfile",

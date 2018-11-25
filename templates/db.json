@@ -1,0 +1,94 @@
+{
+    "AWSTemplateFormatVersion": "2010-09-09",
+    "Description": "AWS CloudFormation BLAH **WARNING** This template creates an Amazon EC2 instance. You will be billed for the AWS resources used if you create a stack from this template.",
+    "Parameters": {
+        "FirewallStackName": {
+            "Default": "Firewall-Stack",
+            "Description": "=FirewallStackName",
+            "Type": "String"
+        },
+        "IAMStackName": {
+            "Default": "IAM-Stack",
+            "Description": "IAMStackName",
+            "Type": "String"
+        },
+        "NetworkingStackName": {
+            "Default": "Networking-Stack",
+            "Description": "NetworkingStackName",
+            "Type": "String"
+        }
+    },
+    "Resources": {
+        "AuroraPostgres": {
+            "Properties": {
+                "DBSubnetGroupName": {
+                    "Ref": "DBSubnetGroup"
+                },
+                "DatabaseName": {
+                    "Ref": "DatabaseName"
+                },
+                "Engine": "aurora-postgresql",
+                "EngineMode": "provisioned",
+                "EngineVersion": "10.5",
+                "KmsKeyId": {
+                    "Ref": "DatabaseEncryptionKey"
+                },
+                "MasterUserPassword": {
+                    "Ref": "MasterUserPassword"
+                },
+                "MasterUsername": {
+                    "Ref": "MasterUsername"
+                },
+                "Port": 5432,
+                "StorageEncrypted": "true",
+                "Tags": [
+                    [
+                        {
+                            "Key": "Application",
+                            "Value": {
+                                "Ref": "AWS::StackName"
+                            }
+                        }
+                    ]
+                ],
+                "VpcSecurityGroupIds": [
+                    {
+                        "Fn::ImportValue": {
+                            "Fn::Sub": "${FirewallStackName}-DBSG"
+                        }
+                    }
+                ]
+            },
+            "Type": "AWS::RDS::DBCluster"
+        },
+        "DBSubnetGroup": {
+            "Properties": {
+                "DBSubnetGroupDescription": "Aurora Postgres Subnet Group",
+                "DBSubnetGroupName": "AuroraPostgresSubnetGroup",
+                "SubnetIds": [
+                    {
+                        "Fn::ImportValue": {
+                            "Fn::Sub": "${NetworkingStackName}-SubnetId7"
+                        }
+                    },
+                    {
+                        "Fn::ImportValue": {
+                            "Fn::Sub": "${NetworkingStackName}-SubnetId8"
+                        }
+                    }
+                ],
+                "Tags": [
+                    [
+                        {
+                            "Key": "Application",
+                            "Value": {
+                                "Ref": "AWS::StackName"
+                            }
+                        }
+                    ]
+                ]
+            },
+            "Type": "AWS::RDS::DBSubnetGroup"
+        }
+    }
+}

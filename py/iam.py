@@ -1,5 +1,7 @@
 from troposphere.iam import InstanceProfile, Role, Policy
-from troposphere import Ref, Template, Output, Parameter, Join, GetAtt, Export, Name
+from troposphere import Ref, Template, Output, Parameter, Join, GetAtt, Export, Name, Tags, Sub
+from troposphere.kms import Key
+
 from awacs.aws import Allow, Statement, Principal, Policy
 from awacs.sts import AssumeRole
 
@@ -27,6 +29,13 @@ instanceProfile = t.add_resource(
                 InstanceProfile("EC2InstanceProfile", Roles=[Ref(ec2Role)], InstanceProfileName="EC2InstanceProfile")
                 )
 
+
+dbKey = t.add_resource(
+                Key("DBKey", Description="Key for Aurora Postgres Encryption At Rest", EnableKeyRotation=True, 
+                    KeyPolicy=Sub(policies.dbKMSKeyPolicy), Tags=Tags(Application=Ref("AWS::StackName")) )
+                )
+
+
 t.add_version('2010-09-09')
 
 t.add_description("""\
@@ -38,10 +47,11 @@ t.add_parameter(Parameter("RandomString", Description="RandomString", Type="Stri
 
 
 
-joinClause = Join("-", [Ref("AWS::StackName"), "InstanceProfileArn"])
-exp = Export(Name(joinClause))
+t.add_output(Output("InstanceProfile",Value=GetAtt(instanceProfile,"Arn"),
+                Export=Export(Name(Join("-", [Ref("AWS::StackName"), "InstanceProfileArn"])))))
 
-t.add_output(Output("InstanceProfile",Value=GetAtt(instanceProfile,"Arn"),Export=exp))
+t.add_output(Output("DbKeyArn",Value=GetAtt(dbKey,"Arn"),
+                Export=Export(Name(Join("-", [Ref("AWS::StackName"), "DBKeyArn"])))))
 
 file = open('iam.json','w')
 file.write(t.to_json())

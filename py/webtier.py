@@ -89,7 +89,6 @@ t.add_resource(webLBTG)
 t.add_resource(webLB)
 t.add_resource(webLBlistener)
 
-
 t.add_version('2010-09-09')
 
 t.add_description("""\
