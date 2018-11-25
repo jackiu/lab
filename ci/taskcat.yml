@@ -33,4 +33,4 @@ tests:
     regions:
       - us-west-1
       - us-east-1
-    template_file: webtier.json
+    template_file: db.json

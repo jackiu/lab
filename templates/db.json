@@ -1,7 +1,77 @@
 {
     "AWSTemplateFormatVersion": "2010-09-09",
     "Description": "AWS CloudFormation BLAH **WARNING** This template creates an Amazon EC2 instance. You will be billed for the AWS resources used if you create a stack from this template.",
+    "Outputs": {
+        "EndPointAddress": {
+            "Export": {
+                "Name": {
+                    "Fn::Join": [
+                        "-",
+                        [
+                            {
+                                "Ref": "AWS::StackName"
+                            },
+                            "EndpointAddress"
+                        ]
+                    ]
+                }
+            },
+            "Value": {
+                "Fn::GetAtt": [
+                    "AuroraPostgres",
+                    "Endpoint.Address"
+                ]
+            }
+        },
+        "Port": {
+            "Export": {
+                "Name": {
+                    "Fn::Join": [
+                        "-",
+                        [
+                            {
+                                "Ref": "AWS::StackName"
+                            },
+                            "Port"
+                        ]
+                    ]
+                }
+            },
+            "Value": {
+                "Fn::GetAtt": [
+                    "AuroraPostgres",
+                    "Endpoint.Port"
+                ]
+            }
+        },
+        "ReadEndPointAddress": {
+            "Export": {
+                "Name": {
+                    "Fn::Join": [
+                        "-",
+                        [
+                            {
+                                "Ref": "AWS::StackName"
+                            },
+                            "ReadEndpointAddress"
+                        ]
+                    ]
+                }
+            },
+            "Value": {
+                "Fn::GetAtt": [
+                    "AuroraPostgres",
+                    "ReadEndpoint.Address"
+                ]
+            }
+        }
+    },
     "Parameters": {
+        "DatabaseName": {
+            "Default": "mydb",
+            "Description": "=DatabaseName",
+            "Type": "String"
+        },
         "FirewallStackName": {
             "Default": "Firewall-Stack",
             "Description": "=FirewallStackName",
@@ -10,6 +80,16 @@
         "IAMStackName": {
             "Default": "IAM-Stack",
             "Description": "IAMStackName",
+            "Type": "String"
+        },
+        "MasterUserPassword": {
+            "Default": "11223344",
+            "Description": "=MasterUserPassword",
+            "Type": "String"
+        },
+        "MasterUsername": {
+            "Default": "jack",
+            "Description": "=MasterUsername",
             "Type": "String"
         },
         "NetworkingStackName": {
@@ -21,6 +101,7 @@
     "Resources": {
         "AuroraPostgres": {
             "Properties": {
+                "DBClusterParameterGroupName": "default.aurora-postgresql10",
                 "DBSubnetGroupName": {
                     "Ref": "DBSubnetGroup"
                 },
@@ -31,7 +112,9 @@
                 "EngineMode": "provisioned",
                 "EngineVersion": "10.5",
                 "KmsKeyId": {
-                    "Ref": "DatabaseEncryptionKey"
+                    "Fn::ImportValue": {
+                        "Fn::Sub": "${IAMStackName}-DBKeyArn"
+                    }
                 },
                 "MasterUserPassword": {
                     "Ref": "MasterUserPassword"
@@ -42,14 +125,12 @@
                 "Port": 5432,
                 "StorageEncrypted": "true",
                 "Tags": [
-                    [
-                        {
-                            "Key": "Application",
-                            "Value": {
-                                "Ref": "AWS::StackName"
-                            }
+                    {
+                        "Key": "Application",
+                        "Value": {
+                            "Ref": "AWS::StackName"
                         }
-                    ]
+                    }
                 ],
                 "VpcSecurityGroupIds": [
                     {
@@ -64,7 +145,7 @@
         "DBSubnetGroup": {
             "Properties": {
                 "DBSubnetGroupDescription": "Aurora Postgres Subnet Group",
-                "DBSubnetGroupName": "AuroraPostgresSubnetGroup",
+                "DBSubnetGroupName": "aurora-postgres-subnet-group",
                 "SubnetIds": [
                     {
                         "Fn::ImportValue": {
@@ -78,14 +159,12 @@
                     }
                 ],
                 "Tags": [
-                    [
-                        {
-                            "Key": "Application",
-                            "Value": {
-                                "Ref": "AWS::StackName"
-                            }
+                    {
+                        "Key": "Application",
+                        "Value": {
+                            "Ref": "AWS::StackName"
                         }
-                    ]
+                    }
                 ]
             },
             "Type": "AWS::RDS::DBSubnetGroup"
