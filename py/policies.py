@@ -67,3 +67,33 @@ dbKMSKeyPolicy = """
   ]
 }
 """
+
+secretManagerKeyPolicy= """
+{
+  "Version" : "2012-10-17",
+  "Id" : "auto-secretsmanager-1",
+  "Statement" : [ {
+    "Sid" : "Allow access through AWS Secrets Manager for all principals in the account that are authorized to use AWS Secrets Manager",
+    "Effect" : "Allow",
+    "Principal" : {
+      "AWS" : "*"
+    },
+    "Action" : [ "kms:Encrypt", "kms:Decrypt", "kms:ReEncrypt*", "kms:GenerateDataKey*", "kms:CreateGrant", "kms:DescribeKey" ],
+    "Resource" : "*",
+    "Condition" : {
+      "StringEquals" : {
+        "kms:ViaService" : "secretsmanager.${AWS::Region}.amazonaws.com",
+        "kms:CallerAccount" : "${AWS::AccountId}"
+      }
+    }
+  },{
+    "Sid" : "Allow direct access to key metadata to the account",
+    "Effect" : "Allow",
+    "Principal" : {
+      "AWS" : "arn:aws:iam::${AWS::AccountId}:root"
+    },
+    "Action" : "kms:*",
+    "Resource" : "*"
+  } ]
+}
+"""

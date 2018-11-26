@@ -225,6 +225,19 @@
             },
             "Type": "AWS::EC2::SecurityGroupEgress"
         },
+        "AppEngress3": {
+            "Properties": {
+                "CidrIp": "0.0.0.0/0",
+                "Description": "App Server Egress to everywhere port 80",
+                "FromPort": 80,
+                "GroupId": {
+                    "Ref": "AppInstanceSG"
+                },
+                "IpProtocol": "TCP",
+                "ToPort": 80
+            },
+            "Type": "AWS::EC2::SecurityGroupEgress"
+        },
         "AppIngress1": {
             "Properties": {
                 "Description": "App Server Ingress from Internal Application Load Balancer",

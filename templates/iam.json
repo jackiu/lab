@@ -43,6 +43,27 @@
                     "Arn"
                 ]
             }
+        },
+        "SecretManagerKeyArn": {
+            "Export": {
+                "Name": {
+                    "Fn::Join": [
+                        "-",
+                        [
+                            {
+                                "Ref": "AWS::StackName"
+                            },
+                            "SecretManagerKeyArn"
+                        ]
+                    ]
+                }
+            },
+            "Value": {
+                "Fn::GetAtt": [
+                    "SecretManagerKey",
+                    "Arn"
+                ]
+            }
         }
     },
     "Parameters": {
@@ -70,6 +91,15 @@
                 ]
             },
             "Type": "AWS::KMS::Key"
+        },
+        "DBKeyAlias": {
+            "Properties": {
+                "AliasName": "alias/AuroraPostgresKey",
+                "TargetKeyId": {
+                    "Ref": "DBKey"
+                }
+            },
+            "Type": "AWS::KMS::Alias"
         },
         "EC2InstanceProfile": {
             "Properties": {
@@ -106,6 +136,33 @@
                 "RoleName": "GenericEC2Role"
             },
             "Type": "AWS::IAM::Role"
+        },
+        "SecretManagerKey": {
+            "Properties": {
+                "Description": "Key for Secret Manger Key Encryption ",
+                "EnableKeyRotation": "true",
+                "KeyPolicy": {
+                    "Fn::Sub": "\n{\n  \"Version\" : \"2012-10-17\",\n  \"Id\" : \"auto-secretsmanager-1\",\n  \"Statement\" : [ {\n    \"Sid\" : \"Allow access through AWS Secrets Manager for all principals in the account that are authorized to use AWS Secrets Manager\",\n    \"Effect\" : \"Allow\",\n    \"Principal\" : {\n      \"AWS\" : \"*\"\n    },\n    \"Action\" : [ \"kms:Encrypt\", \"kms:Decrypt\", \"kms:ReEncrypt*\", \"kms:GenerateDataKey*\", \"kms:CreateGrant\", \"kms:DescribeKey\" ],\n    \"Resource\" : \"*\",\n    \"Condition\" : {\n      \"StringEquals\" : {\n        \"kms:ViaService\" : \"secretsmanager.${AWS::Region}.amazonaws.com\",\n        \"kms:CallerAccount\" : \"${AWS::AccountId}\"\n      }\n    }\n  },{\n    \"Sid\" : \"Allow direct access to key metadata to the account\",\n    \"Effect\" : \"Allow\",\n    \"Principal\" : {\n      \"AWS\" : \"arn:aws:iam::${AWS::AccountId}:root\"\n    },\n    \"Action\" : \"kms:*\",\n    \"Resource\" : \"*\"\n  } ]\n}\n"
+                },
+                "Tags": [
+                    {
+                        "Key": "Application",
+                        "Value": {
+                            "Ref": "AWS::StackName"
+                        }
+                    }
+                ]
+            },
+            "Type": "AWS::KMS::Key"
+        },
+        "SecretManagerKeyAlias": {
+            "Properties": {
+                "AliasName": "alias/SecretManagerKey",
+                "TargetKeyId": {
+                    "Ref": "SecretManagerKey"
+                }
+            },
+            "Type": "AWS::KMS::Alias"
         }
     }
 }

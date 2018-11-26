@@ -1,0 +1,50 @@
+{
+    "Parameters": {
+        "DBStackName": {
+            "Default": "DB-Stack",
+            "Description": "=Database Stack Name",
+            "Type": "String"
+        }
+    },
+    "Resources": {
+        "DBSecret": {
+            "Properties": {
+                "Description": "Aurora Postgres Database passowrd",
+                "KmsKeyId": {
+                    "Fn::ImportValue": {
+                        "Fn::Sub": "${IAMStackName}-SecretManagerKeyArn"
+                    }
+                },
+                "Name": "DBCreds",
+                "SecretString": {
+                    "Ref": "DBPassword"
+                }
+            },
+            "Type": "AWS::SecretsManager::Secret"
+        },
+        "DBURL": {
+            "Properties": {
+                "Description": "Aurora Postgres URL",
+                "Name": "DBURL",
+                "Type": "String",
+                "Value": {
+                    "Fn::ImportValue": {
+                        "Fn::Sub": "${DBStackName}-EndpointAddress"
+                    }
+                }
+            },
+            "Type": "AWS::SSM::Parameter"
+        },
+        "DBUsername": {
+            "Properties": {
+                "Description": "Aurora Postgres User Name",
+                "Name": "DBUsername",
+                "Type": "String",
+                "Value": {
+                    "Ref": "DBUsername"
+                }
+            },
+            "Type": "AWS::SSM::Parameter"
+        }
+    }
+}

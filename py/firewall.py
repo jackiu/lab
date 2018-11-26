@@ -2,7 +2,7 @@ from troposphere import Join, Output, Export, Name, ImportValue, Sub, FindInMap
 from troposphere import Parameter, Ref, Tags, Template, GetAZs, GetAtt, Select
 
 from troposphere.ec2 import SecurityGroupIngress, SecurityGroupEgress, SecurityGroup
-from troposphere.constants import SSH_PORT, HTTPS_PORT, POSTGRESQL_PORT
+from troposphere.constants import SSH_PORT, HTTPS_PORT, POSTGRESQL_PORT, HTTP_PORT
 
 everywhereCIDR = "0.0.0.0/0"
 localCIDR = "127.0.0.1/32"
@@ -66,6 +66,9 @@ appEngress1 = SecurityGroupEgress("AppEngress1", DestinationSecurityGroupId=Ref(
                                     IpProtocol="TCP", FromPort=POSTGRESQL_PORT, ToPort=POSTGRESQL_PORT, GroupId=Ref(appInstanceSG))
 appEngress2 = SecurityGroupEgress("AppEngress2", DestinationPrefixListId=FindInMap("RegionMap", Ref("AWS::Region"), "PRE"), Description="App Server Egress to S3 Endpoint", 
                                     IpProtocol="TCP", FromPort=HTTPS_PORT, ToPort=HTTPS_PORT, GroupId=Ref(appInstanceSG))
+appEngress3 = SecurityGroupEgress("AppEngress3", CidrIp=everywhereCIDR, Description="App Server Egress to everywhere port 80", 
+                                    IpProtocol="TCP", FromPort=HTTP_PORT, ToPort=HTTP_PORT, GroupId=Ref(appInstanceSG))
+
 
 appALBIngress = SecurityGroupIngress("AppALBIngress", SourceSecurityGroupId=Ref(webInstanceSG), Description="App ALB Ingress from App Instance", 
                                     IpProtocol="TCP", ToPort=HTTPS_PORT, FromPort=HTTPS_PORT, GroupId=Ref(appALBSG))
@@ -123,6 +126,7 @@ t.add_resource(appIngress1)
 t.add_resource(appIngress2)
 t.add_resource(appEngress1)
 t.add_resource(appEngress2)
+t.add_resource(appEngress3)
 t.add_resource(appALBIngress)
 t.add_resource(appALBEngress)
 t.add_resource(webIngress1)
