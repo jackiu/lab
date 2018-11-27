@@ -1,6 +1,6 @@
 from troposphere import Join, Output, Parameter, Template, ImportValue, Sub, Tags, Ref
 from troposphere import Name, Export, GetAtt
-from troposphere.rds import DBCluster, DBSubnetGroup, DBClusterParameterGroup
+from troposphere.rds import DBCluster, DBSubnetGroup, DBClusterParameterGroup, DBInstance
 from troposphere.constants import POSTGRESQL_PORT
 
 import userdata
@@ -10,7 +10,7 @@ t = Template()
 networkingStackName = Parameter("NetworkingStackName", Description="NetworkingStackName", Type="String", Default="Networking-Stack")
 iamStackName = Parameter("IAMStackName", Description="IAMStackName", Type="String", Default="IAM-Stack")
 firewallStackName = Parameter("FirewallStackName", Description="=FirewallStackName", Type="String", Default="Firewall-Stack")
-dbName = Parameter("DatabaseName", Description="=DatabaseName", Type="String", Default="mydb")
+dbName = Parameter("DatabaseName", Description="=DatabaseName", Type="String", Default="jackdb")
 masterUsername = Parameter("MasterUsername", Description="=MasterUsername", Type="String", Default="jack")
 masterUserPassword = Parameter("MasterUserPassword", Description="=MasterUserPassword", Type="String", Default="11223344")
 
@@ -24,11 +24,20 @@ dbSG = ImportValue(Sub("${FirewallStackName}-DBSG"))
 dbSubnetGroup = DBSubnetGroup("DBSubnetGroup", DBSubnetGroupDescription="Aurora Postgres Subnet Group", DBSubnetGroupName="aurora-postgres-subnet-group", 
                                 SubnetIds=[privateSubnetDB1, privateSubnetDB2], Tags=Tags(Application=Ref("AWS::StackName")))
 
-postgresCluster = DBCluster("AuroraPostgres", DBSubnetGroupName=Ref(dbSubnetGroup), DatabaseName=Ref(dbName),  
+postgresCluster = DBCluster("AuroraPostgresCluster", DBSubnetGroupName=Ref(dbSubnetGroup), DatabaseName=Ref(dbName),  
                                 Engine="aurora-postgresql", EngineMode="provisioned", EngineVersion="10.5", KmsKeyId=dbKeyArn, 
                                 MasterUsername=Ref(masterUsername), MasterUserPassword=Ref(masterUserPassword), Port=POSTGRESQL_PORT, 
                                 StorageEncrypted=True, Tags=Tags(Application=Ref("AWS::StackName")), VpcSecurityGroupIds=[dbSG],
                                 DBClusterParameterGroupName="default.aurora-postgresql10"
+                            )
+
+postgresInstance = DBInstance("AuroraPostgresInstance", DBSubnetGroupName=Ref(dbSubnetGroup),
+                                DBClusterIdentifier=Ref(postgresCluster),
+                                DBInstanceClass="db.r4.large", DBInstanceIdentifier="jackdbinstance",
+                                DBParameterGroupName="default.aurora-postgresql10", 
+                                EnablePerformanceInsights=True, CopyTagsToSnapshot=True,
+                                Engine="aurora-postgresql",
+                                StorageEncrypted=True, Tags=Tags(Application=Ref("AWS::StackName"))
                             )
 
 t.add_parameter(networkingStackName)
@@ -40,6 +49,7 @@ t.add_parameter(masterUsername)
 t.add_parameter(masterUserPassword)
 
 t.add_resource(postgresCluster)
+t.add_resource(postgresInstance)
 t.add_resource(dbSubnetGroup)
 
 t.add_version('2010-09-09')

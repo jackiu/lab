@@ -1,12 +1,53 @@
 {
+    "AWSTemplateFormatVersion": "2010-09-09",
+    "Description": "AWS CloudFormation BLAH **WARNING** This template creates an Amazon EC2 instance. You will be billed for the AWS resources used if you create a stack from this template.",
     "Parameters": {
+        "DBPassword": {
+            "Default": "11223344",
+            "Description": "DBPassword",
+            "Type": "String"
+        },
         "DBStackName": {
             "Default": "DB-Stack",
-            "Description": "=Database Stack Name",
+            "Description": "Database Stack Name",
+            "Type": "String"
+        },
+        "DBUserName": {
+            "Default": "jack",
+            "Description": "DBUsername",
+            "Type": "String"
+        },
+        "IAMStackName": {
+            "Default": "IAM-Stack",
+            "Description": "IAMStackName",
             "Type": "String"
         }
     },
     "Resources": {
+        "APDBURL": {
+            "Properties": {
+                "Description": "Aurora Postgres Endpoint URL",
+                "Name": "AuroraPostgresEndpointAddress",
+                "Type": "String",
+                "Value": {
+                    "Fn::ImportValue": {
+                        "Fn::Sub": "${DBStackName}-EndpointAddress"
+                    }
+                }
+            },
+            "Type": "AWS::SSM::Parameter"
+        },
+        "APUserName": {
+            "Properties": {
+                "Description": "Aurora Postgres User Name",
+                "Name": "AuroraPostgresUsername",
+                "Type": "String",
+                "Value": {
+                    "Ref": "DBUserName"
+                }
+            },
+            "Type": "AWS::SSM::Parameter"
+        },
         "DBSecret": {
             "Properties": {
                 "Description": "Aurora Postgres Database passowrd",
@@ -21,30 +62,6 @@
                 }
             },
             "Type": "AWS::SecretsManager::Secret"
-        },
-        "DBURL": {
-            "Properties": {
-                "Description": "Aurora Postgres URL",
-                "Name": "DBURL",
-                "Type": "String",
-                "Value": {
-                    "Fn::ImportValue": {
-                        "Fn::Sub": "${DBStackName}-EndpointAddress"
-                    }
-                }
-            },
-            "Type": "AWS::SSM::Parameter"
-        },
-        "DBUsername": {
-            "Properties": {
-                "Description": "Aurora Postgres User Name",
-                "Name": "DBUsername",
-                "Type": "String",
-                "Value": {
-                    "Ref": "DBUsername"
-                }
-            },
-            "Type": "AWS::SSM::Parameter"
         }
     }
 }

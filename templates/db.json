@@ -18,7 +18,7 @@
             },
             "Value": {
                 "Fn::GetAtt": [
-                    "AuroraPostgres",
+                    "AuroraPostgresCluster",
                     "Endpoint.Address"
                 ]
             }
@@ -39,7 +39,7 @@
             },
             "Value": {
                 "Fn::GetAtt": [
-                    "AuroraPostgres",
+                    "AuroraPostgresCluster",
                     "Endpoint.Port"
                 ]
             }
@@ -60,7 +60,7 @@
             },
             "Value": {
                 "Fn::GetAtt": [
-                    "AuroraPostgres",
+                    "AuroraPostgresCluster",
                     "ReadEndpoint.Address"
                 ]
             }
@@ -68,7 +68,7 @@
     },
     "Parameters": {
         "DatabaseName": {
-            "Default": "mydb",
+            "Default": "jackdb",
             "Description": "=DatabaseName",
             "Type": "String"
         },
@@ -99,7 +99,7 @@
         }
     },
     "Resources": {
-        "AuroraPostgres": {
+        "AuroraPostgresCluster": {
             "Properties": {
                 "DBClusterParameterGroupName": "default.aurora-postgresql10",
                 "DBSubnetGroupName": {
@@ -141,6 +141,32 @@
                 ]
             },
             "Type": "AWS::RDS::DBCluster"
+        },
+        "AuroraPostgresInstance": {
+            "Properties": {
+                "CopyTagsToSnapshot": "true",
+                "DBClusterIdentifier": {
+                    "Ref": "AuroraPostgresCluster"
+                },
+                "DBInstanceClass": "db.r4.large",
+                "DBInstanceIdentifier": "jackdbinstance",
+                "DBParameterGroupName": "default.aurora-postgresql10",
+                "DBSubnetGroupName": {
+                    "Ref": "DBSubnetGroup"
+                },
+                "EnablePerformanceInsights": "true",
+                "Engine": "aurora-postgresql",
+                "StorageEncrypted": "true",
+                "Tags": [
+                    {
+                        "Key": "Application",
+                        "Value": {
+                            "Ref": "AWS::StackName"
+                        }
+                    }
+                ]
+            },
+            "Type": "AWS::RDS::DBInstance"
         },
         "DBSubnetGroup": {
             "Properties": {
