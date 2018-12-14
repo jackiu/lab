@@ -18,7 +18,7 @@
             },
             "Value": {
                 "Fn::GetAtt": [
-                    "AuroraPostgresCluster",
+                    "AuroraMySQLCluster",
                     "Endpoint.Address"
                 ]
             }
@@ -39,7 +39,7 @@
             },
             "Value": {
                 "Fn::GetAtt": [
-                    "AuroraPostgresCluster",
+                    "AuroraMySQLCluster",
                     "Endpoint.Port"
                 ]
             }
@@ -60,7 +60,7 @@
             },
             "Value": {
                 "Fn::GetAtt": [
-                    "AuroraPostgresCluster",
+                    "AuroraMySQLCluster",
                     "ReadEndpoint.Address"
                 ]
             }
@@ -99,18 +99,18 @@
         }
     },
     "Resources": {
-        "AuroraPostgresCluster": {
+        "AuroraMySQLCluster": {
             "Properties": {
-                "DBClusterParameterGroupName": "default.aurora-postgresql10",
+                "DBClusterParameterGroupName": "default.aurora5.6",
                 "DBSubnetGroupName": {
                     "Ref": "DBSubnetGroup"
                 },
                 "DatabaseName": {
                     "Ref": "DatabaseName"
                 },
-                "Engine": "aurora-postgresql",
+                "Engine": "aurora-mysql",
                 "EngineMode": "provisioned",
-                "EngineVersion": "10.5",
+                "EngineVersion": "5.7.12",
                 "KmsKeyId": {
                     "Fn::ImportValue": {
                         "Fn::Sub": "${IAMStackName}-DBKeyArn"
@@ -122,7 +122,7 @@
                 "MasterUsername": {
                     "Ref": "MasterUsername"
                 },
-                "Port": 5432,
+                "Port": 3306,
                 "StorageEncrypted": "true",
                 "Tags": [
                     {
@@ -142,20 +142,20 @@
             },
             "Type": "AWS::RDS::DBCluster"
         },
-        "AuroraPostgresInstance": {
+        "AuroraMySQLInstance": {
             "Properties": {
                 "CopyTagsToSnapshot": "true",
                 "DBClusterIdentifier": {
-                    "Ref": "AuroraPostgresCluster"
+                    "Ref": "AuroraMySQLCluster"
                 },
                 "DBInstanceClass": "db.r4.large",
                 "DBInstanceIdentifier": "jackdbinstance",
-                "DBParameterGroupName": "default.aurora-postgresql10",
+                "DBParameterGroupName": "default.aurora5.6",
                 "DBSubnetGroupName": {
                     "Ref": "DBSubnetGroup"
                 },
                 "EnablePerformanceInsights": "true",
-                "Engine": "aurora-postgresql",
+                "Engine": "aurora-mysql",
                 "StorageEncrypted": "true",
                 "Tags": [
                     {
@@ -170,8 +170,8 @@
         },
         "DBSubnetGroup": {
             "Properties": {
-                "DBSubnetGroupDescription": "Aurora Postgres Subnet Group",
-                "DBSubnetGroupName": "aurora-postgres-subnet-group",
+                "DBSubnetGroupDescription": "Aurora MySQL Subnet Group",
+                "DBSubnetGroupName": "aurora-mysql-subnet-group",
                 "SubnetIds": [
                     {
                         "Fn::ImportValue": {

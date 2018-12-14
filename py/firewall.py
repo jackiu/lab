@@ -2,7 +2,7 @@ from troposphere import Join, Output, Export, Name, ImportValue, Sub, FindInMap
 from troposphere import Parameter, Ref, Tags, Template, GetAZs, GetAtt, Select
 
 from troposphere.ec2 import SecurityGroupIngress, SecurityGroupEgress, SecurityGroup
-from troposphere.constants import SSH_PORT, HTTPS_PORT, POSTGRESQL_PORT, HTTP_PORT
+from troposphere.constants import SSH_PORT, HTTPS_PORT, HTTP_PORT
 
 everywhereCIDR = "0.0.0.0/0"
 localCIDR = "127.0.0.1/32"
@@ -11,6 +11,7 @@ blockedEgress = [{
     "IpProtocol": "-1"
 }]
 
+MYSQL_PORT = 3306
 
 t = Template()
 
@@ -56,14 +57,14 @@ bastionHostSG = SecurityGroup( "BastionHostSG", GroupName="Bastion Host SG",
                     VpcId=vpc )
 
 dbIngress = SecurityGroupIngress("DBIngress", SourceSecurityGroupId=Ref(appInstanceSG), Description="db Ingress from app instance", 
-                                    IpProtocol="TCP", FromPort=POSTGRESQL_PORT, ToPort=POSTGRESQL_PORT, GroupId=Ref(dbSG))
+                                    IpProtocol="TCP", FromPort=MYSQL_PORT, ToPort=MYSQL_PORT, GroupId=Ref(dbSG))
 
 appIngress1 = SecurityGroupIngress("AppIngress1", SourceSecurityGroupId=Ref(appALBSG), Description="App Server Ingress from Internal Application Load Balancer", 
                                     IpProtocol="TCP", FromPort=8443, ToPort=8443, GroupId=Ref(appInstanceSG))
 appIngress2 = SecurityGroupIngress("AppIngress2", SourceSecurityGroupId=Ref(bastionHostSG), Description="App Server Ingress from Bastion Host", 
                                     IpProtocol="TCP", FromPort=SSH_PORT, ToPort=SSH_PORT, GroupId=Ref(appInstanceSG))
 appEngress1 = SecurityGroupEgress("AppEngress1", DestinationSecurityGroupId=Ref(dbSG), Description="App Server Egress to DB", 
-                                    IpProtocol="TCP", FromPort=POSTGRESQL_PORT, ToPort=POSTGRESQL_PORT, GroupId=Ref(appInstanceSG))
+                                    IpProtocol="TCP", FromPort=MYSQL_PORT, ToPort=MYSQL_PORT, GroupId=Ref(appInstanceSG))
 appEngress2 = SecurityGroupEgress("AppEngress2", DestinationPrefixListId=FindInMap("RegionMap", Ref("AWS::Region"), "PRE"), Description="App Server Egress to S3 Endpoint", 
                                     IpProtocol="TCP", FromPort=HTTPS_PORT, ToPort=HTTPS_PORT, GroupId=Ref(appInstanceSG))
 appEngress3 = SecurityGroupEgress("AppEngress3", CidrIp=everywhereCIDR, Description="App Server Egress to everywhere port 80", 

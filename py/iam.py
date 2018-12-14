@@ -31,11 +31,11 @@ instanceProfile = t.add_resource(
 
 
 dbKey = t.add_resource(
-                Key("DBKey", Description="Key for Aurora Postgres Encryption At Rest", EnableKeyRotation=True, 
+                Key("DBKey", Description="Key for Aurora MYSQL Encryption At Rest", EnableKeyRotation=True, 
                     KeyPolicy=Sub(policies.dbKMSKeyPolicy), Tags=Tags(Application=Ref("AWS::StackName")) )
                 )
 t.add_resource( 
-        Alias("DBKeyAlias", AliasName="alias/AuroraPostgresKey", TargetKeyId=Ref(dbKey)))
+        Alias("DBKeyAlias", AliasName="alias/AuroraMySQLKey", TargetKeyId=Ref(dbKey)))
 
 
 secretManagerKey = t.add_resource(

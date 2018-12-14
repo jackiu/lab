@@ -18,7 +18,7 @@ dbEndpointURL = ImportValue(Sub("${DBStackName}-EndpointAddress"))
 secretManagerKeyArn = ImportValue(Sub("${IAMStackName}-SecretManagerKeyArn"))
 
 
-dbSecret = Secret("DBSecret", Description="Aurora Postgres Database passowrd", KmsKeyId=secretManagerKeyArn, SecretString=Ref(dbPassword), Name="DBCreds")
+dbSecret = Secret("DBSecret", Description="Aurora MySQL Database passowrd", KmsKeyId=secretManagerKeyArn, SecretString=Ref(dbPassword), Name="DBCreds")
 
 
 t = Template()
@@ -35,8 +35,8 @@ t.add_parameter(dbStackName)
 t.add_parameter(dbUsername)
 t.add_parameter(dbPassword)
 
-t.add_resource(createSSMParameter("APDBURL", "AuroraPostgresEndpointAddress", "Aurora Postgres Endpoint URL", "String", dbEndpointURL))
-t.add_resource(createSSMParameter("APUserName", "AuroraPostgresUsername", "Aurora Postgres User Name", "String", Ref(dbUsername)))
+t.add_resource(createSSMParameter("AMYSQLDBURL", "AuroraMySQLEndpointAddress", "Aurora MySQL Endpoint URL", "String", dbEndpointURL))
+t.add_resource(createSSMParameter("AMYSQLUserName", "AuroraMySQLUsername", "Aurora MySQL User Name", "String", Ref(dbUsername)))
 
 t.add_resource(dbSecret)
 
