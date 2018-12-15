@@ -1,9 +1,9 @@
-from troposphere.iam import InstanceProfile, Role, Policy
+# from awacs.aws import Allow, Statement, Principal, PolicyDocument, Action
+# from awacs.sts import AssumeRole
+
 from troposphere import Ref, Template, Output, Parameter, Join, GetAtt, Export, Name, Tags, Sub
 from troposphere.kms import Key, Alias
-
-from awacs.aws import Allow, Statement, Principal, Policy
-from awacs.sts import AssumeRole
+from troposphere.iam import InstanceProfile, Role, Policy
 
 import policies
 
@@ -11,19 +11,38 @@ ec2RolePolicies = ["arn:aws:iam::aws:policy/AmazonS3FullAccess", "arn:aws:iam::a
 
 t = Template()
 
+            
 ec2Role = t.add_resource(
                 Role("Role", 
-                AssumeRolePolicyDocument=Policy(
-                    Statement=[
-                        Statement(
-                            Effect=Allow,
-                            Action=[AssumeRole],
-                            Principal=Principal("Service", ["ec2.amazonaws.com"])
-                        )
-                    ]
-                ), 
+                AssumeRolePolicyDocument={
+                    "Version" : "2012-10-17",
+                    "Statement": [ {
+                        "Effect": "Allow",
+                        "Principal": {
+                            "Service": [ "ec2.amazonaws.com" ]
+                        },
+                        "Action": [ "sts:AssumeRole" ]
+                    } ]
+                },
+                Policies=[
+                    Policy( 
+                        PolicyDocument= {
+                            "Version": "2012-10-17",
+                            "Statement": [
+                                {
+                                    "Effect": "Allow",
+                                    "Action": ["ssm:GetParameter","secretsmanager:GetSecretValue"],
+                                    "Resource": "*"
+                                }
+                            ]
+                        },
+                        PolicyName="AppEC2Policy"
+                    )
+                ],
                 RoleName="GenericEC2Role", 
                 ManagedPolicyArns=ec2RolePolicies))
+
+
 
 instanceProfile = t.add_resource(
                 InstanceProfile("EC2InstanceProfile", Roles=[Ref(ec2Role)], InstanceProfileName="EC2InstanceProfile")
@@ -45,6 +64,18 @@ secretManagerKey = t.add_resource(
 t.add_resource( 
         Alias("SecretManagerKeyAlias", AliasName="alias/SecretManagerKey", TargetKeyId=Ref(secretManagerKey)))
 
+
+ccEncryptionKey = t.add_resource(
+                Key("CCEncryptionKey", Description="Key for Credit Card Encryption ", EnableKeyRotation=True, 
+                    KeyPolicy=Sub(policies.ccEncryptionKeyPolicy), Tags=Tags(Application=Ref("AWS::StackName")) )
+                )
+t.add_resource( 
+        Alias("CreditCardEncryptionKeyAlias", AliasName="alias/CreditCardEncryptionKey", TargetKeyId=Ref(ccEncryptionKey)))
+
+
+
+
+
 t.add_version('2010-09-09')
 
 t.add_description("""\
@@ -65,6 +96,8 @@ t.add_output(Output("DbKeyArn",Value=GetAtt(dbKey,"Arn"),
 t.add_output(Output("SecretManagerKeyArn",Value=GetAtt(secretManagerKey,"Arn"),
                 Export=Export(Name(Join("-", [Ref("AWS::StackName"), "SecretManagerKeyArn"])))))
 
+t.add_output(Output("CCEncryptionKeyArn",Value=GetAtt(ccEncryptionKey,"Arn"),
+                Export=Export(Name(Join("-", [Ref("AWS::StackName"), "CCEncryptionKeyArn"])))))
 
 
 

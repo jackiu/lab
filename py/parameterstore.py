@@ -16,9 +16,9 @@ dbPassword = Parameter("DBPassword", Description="DBPassword", Type="String", De
 
 dbEndpointURL = ImportValue(Sub("${DBStackName}-EndpointAddress"))
 secretManagerKeyArn = ImportValue(Sub("${IAMStackName}-SecretManagerKeyArn"))
+ccEncryptionKeyArn = ImportValue(Sub("${IAMStackName}-CCEncryptionKeyArn"))
 
-
-dbSecret = Secret("DBSecret", Description="Aurora MySQL Database passowrd", KmsKeyId=secretManagerKeyArn, SecretString=Ref(dbPassword), Name="DBCreds")
+dbSecret = Secret("DBSecret", Description="Aurora MySQL Database passowrd", KmsKeyId=secretManagerKeyArn, SecretString=Ref(dbPassword), Name="prod/mysql/creds")
 
 
 t = Template()
@@ -35,8 +35,12 @@ t.add_parameter(dbStackName)
 t.add_parameter(dbUsername)
 t.add_parameter(dbPassword)
 
-t.add_resource(createSSMParameter("AMYSQLDBURL", "AuroraMySQLEndpointAddress", "Aurora MySQL Endpoint URL", "String", dbEndpointURL))
-t.add_resource(createSSMParameter("AMYSQLUserName", "AuroraMySQLUsername", "Aurora MySQL User Name", "String", Ref(dbUsername)))
+t.add_resource(createSSMParameter("AMYSQLDBHOST", "db-host", "Aurora MySQL Endpoint URL", "String", dbEndpointURL))
+t.add_resource(createSSMParameter("AMYSQLUserName", "db-username", "Aurora MySQL User Name", "String", Ref(dbUsername)))
+t.add_resource(createSSMParameter("AMYSQLDBURL", "db-url", "Aurora MySQL User Name", "String", 
+        "jdbc:mysql://%s:3306/poc?useUnicode=true&characterEncoding=utf8&useLegacyDatetimeCode=false&verifyServerCertificate=true&useSSL=true&requireSSL=true"))
+
+t.add_resource(createSSMParameter("CCEncryptionKeyArn", "cc-encryption-keyarn", "Key Arn for Credit Card encryption", "String", ccEncryptionKeyArn))
 
 t.add_resource(dbSecret)
 

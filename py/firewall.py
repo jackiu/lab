@@ -1,7 +1,7 @@
 from troposphere import Join, Output, Export, Name, ImportValue, Sub, FindInMap
 from troposphere import Parameter, Ref, Tags, Template, GetAZs, GetAtt, Select
 
-from troposphere.ec2 import SecurityGroupIngress, SecurityGroupEgress, SecurityGroup
+from troposphere.ec2 import SecurityGroupIngress, SecurityGroupEgress, SecurityGroup, VPCEndpoint
 from troposphere.constants import SSH_PORT, HTTPS_PORT, HTTP_PORT
 
 everywhereCIDR = "0.0.0.0/0"
@@ -30,6 +30,9 @@ networkingStackName = Parameter("NetworkingStackName", Description="NetworkingSt
 
 vpc = ImportValue(Sub("${NetworkingStackName}-VPCId"))
 
+appPrivateSubnet1 = ImportValue(Sub("${NetworkingStackName}-SubnetId5"))
+appPrivateSubnet2 = ImportValue(Sub("${NetworkingStackName}-SubnetId6"))
+
 dbSG = SecurityGroup( "DBSG", GroupName="DB SG", 
                     GroupDescription="Database Security Group", 
                     SecurityGroupEgress=blockedEgress,
@@ -56,6 +59,10 @@ bastionHostSG = SecurityGroup( "BastionHostSG", GroupName="Bastion Host SG",
                     GroupDescription="Bastion Host Security Group", 
                     VpcId=vpc )
 
+interfaceEndpointSG = SecurityGroup( "InterfaceEndpointSG", GroupName="Interface Endpoint SG", 
+                    GroupDescription="Interface Endpoint Security Group", 
+                    VpcId=vpc )                    
+
 dbIngress = SecurityGroupIngress("DBIngress", SourceSecurityGroupId=Ref(appInstanceSG), Description="db Ingress from app instance", 
                                     IpProtocol="TCP", FromPort=MYSQL_PORT, ToPort=MYSQL_PORT, GroupId=Ref(dbSG))
 
@@ -69,7 +76,8 @@ appEngress2 = SecurityGroupEgress("AppEngress2", DestinationPrefixListId=FindInM
                                     IpProtocol="TCP", FromPort=HTTPS_PORT, ToPort=HTTPS_PORT, GroupId=Ref(appInstanceSG))
 appEngress3 = SecurityGroupEgress("AppEngress3", CidrIp=everywhereCIDR, Description="App Server Egress to everywhere port 80", 
                                     IpProtocol="TCP", FromPort=HTTP_PORT, ToPort=HTTP_PORT, GroupId=Ref(appInstanceSG))
-
+appEngress4 = SecurityGroupEgress("AppEngress4", DestinationSecurityGroupId=Ref(interfaceEndpointSG), Description="App Server Egress to Interface Endpoint", 
+                                    IpProtocol="TCP", FromPort=HTTPS_PORT, ToPort=HTTPS_PORT, GroupId=Ref(appInstanceSG))
 
 appALBIngress = SecurityGroupIngress("AppALBIngress", SourceSecurityGroupId=Ref(webInstanceSG), Description="App ALB Ingress from App Instance", 
                                     IpProtocol="TCP", ToPort=HTTPS_PORT, FromPort=HTTPS_PORT, GroupId=Ref(appALBSG))
@@ -106,6 +114,22 @@ bastionHostEngress3 = SecurityGroupEgress("BastionHostEngressS3", DestinationPre
                                         IpProtocol="TCP", FromPort=HTTPS_PORT, ToPort=HTTPS_PORT, GroupId=Ref(bastionHostSG))
 
 
+
+interfaceEndpointIngress = SecurityGroupIngress("InterfaceEndpointIngress",SourceSecurityGroupId=Ref(appInstanceSG), Description="Interface Endpoint Ingress", 
+                                        IpProtocol="TCP", ToPort=HTTPS_PORT, FromPort=HTTPS_PORT, GroupId=Ref(interfaceEndpointSG))
+
+
+ssmEndPoint=VPCEndpoint("SSMEndPoint", VpcId=vpc, VpcEndpointType="Interface", 
+                            SubnetIds=[appPrivateSubnet1, appPrivateSubnet2], 
+                            SecurityGroupIds=[Ref(interfaceEndpointSG)], PrivateDnsEnabled=True,
+                            ServiceName=Join("", ["com.amazonaws.", Ref("AWS::Region"), ".ssm"]) )
+
+kmsEndPoint=VPCEndpoint("KMSEndPoint", VpcId=vpc, VpcEndpointType="Interface",  
+                            SubnetIds=[appPrivateSubnet1,appPrivateSubnet2], 
+                            SecurityGroupIds=[Ref(interfaceEndpointSG)], PrivateDnsEnabled=True,
+                            ServiceName=Join("", ["com.amazonaws.", Ref("AWS::Region"), ".kms"]) )
+
+
 t.add_version('2010-09-09')
 
 t.add_description("""\
@@ -121,6 +145,7 @@ t.add_resource(appALBSG)
 t.add_resource(webInstanceSG)
 t.add_resource(webALBSG)
 t.add_resource(bastionHostSG)
+t.add_resource(interfaceEndpointSG)
 
 t.add_resource(dbIngress)
 t.add_resource(appIngress1)
@@ -128,6 +153,7 @@ t.add_resource(appIngress2)
 t.add_resource(appEngress1)
 t.add_resource(appEngress2)
 t.add_resource(appEngress3)
+t.add_resource(appEngress4)
 t.add_resource(appALBIngress)
 t.add_resource(appALBEngress)
 t.add_resource(webIngress1)
@@ -140,6 +166,11 @@ t.add_resource(bastionHostIngress)
 t.add_resource(bastionHostEngress)
 t.add_resource(bastionHostEngress2)
 t.add_resource(bastionHostEngress3)
+t.add_resource(interfaceEndpointIngress)
+
+t.add_resource(ssmEndPoint)
+t.add_resource(kmsEndPoint)
+
 
 t.add_output(Output("WebALBSG",Value=Ref(webALBSG), Export=Export(Name(Join("-", [Ref("AWS::StackName"), "WebALBSG"])))))
 t.add_output(Output("WebInstanceSG",Value=Ref(webInstanceSG), Export=Export(Name(Join("-", [Ref("AWS::StackName"), "WebInstanceSG"])))))

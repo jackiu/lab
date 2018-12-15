@@ -23,7 +23,7 @@ subnets = []
 t = Template()
 
 
-vpc = VPC("VPC" , CidrBlock=vpcCIDR)
+vpc = VPC("VPC" , CidrBlock=vpcCIDR, EnableDnsSupport=True, EnableDnsHostnames=True)
 
 for i in range(1, 9):
     publicIP = False
@@ -67,8 +67,10 @@ for i in range(2, 8):
         
     srtas.append(SubnetRouteTableAssociation("PrivateRouteTableAsso" + str(i+1) , RouteTableId=Ref(routeTable), SubnetId=Ref(subnets[i])))
 
+
 vpcEndPoint=VPCEndpoint("S3EndPoint", VpcId=Ref(vpc), RouteTableIds=[Ref(publicRouteTable), Ref(privateRouteTable1), Ref(privateRouteTable2)], 
                             ServiceName=Join("", ["com.amazonaws.", Ref("AWS::Region"), ".s3"]) )
+
 
 t.add_version('2010-09-09')
 
@@ -95,10 +97,11 @@ t.add_resource(privateRouteTable2)
 t.add_resource(publicRoute)
 t.add_resource(privateRoute1)
 t.add_resource(privateRoute2)
+t.add_resource(vpcEndPoint)
+
 for s in srtas:
     t.add_resource(s)
 
-t.add_resource(vpcEndPoint)
 
 t.add_output(Output("VPC",Value=Ref(vpc), Export=Export(Name(Join("-", [Ref("AWS::StackName"), "VPCId"])))))
 for idx, subnet in enumerate(subnets):

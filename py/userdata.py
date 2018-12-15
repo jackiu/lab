@@ -29,18 +29,16 @@ appUserData = r"""
 
 yum -y install java-openjdk
 
-aws s3 cp s3://jackiu-us-east-2/gs-rest-service-0.1.0.jar .
+aws s3 cp s3://jackiu-us-east-2/poc-0.0.1-SNAPSHOT.war .
 
-wget https://s3.amazonaws.com/rds-downloads/rds-ca-2015-root.pem
+aws s3 cp  s3://jackiu-us-east-2/rds-ca-2015-root.pem .
+
+chmod 755 poc-0.0.1-SNAPSHOT.war
 
 openssl x509 -outform der -in rds-ca-2015-root.pem -out rds-combined-ca-bundle.der
 
 keytool -noprompt -keystore /etc/pki/java/cacerts -alias rds_postgres -import -file rds-combined-ca-bundle.der -keypass changeit -storepass changeit
 
-mkdir /root/.postgresql
-
-cp rds-combined-ca-bundle.der /root/.postgresql/root.crt
-
-java -jar gs-rest-service-0.1.0.jar
+./poc-0.0.1-SNAPSHOT.war
 
 """

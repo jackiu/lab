@@ -12,7 +12,7 @@ MYSQL_PORT = 3306
 networkingStackName = Parameter("NetworkingStackName", Description="NetworkingStackName", Type="String", Default="Networking-Stack")
 iamStackName = Parameter("IAMStackName", Description="IAMStackName", Type="String", Default="IAM-Stack")
 firewallStackName = Parameter("FirewallStackName", Description="=FirewallStackName", Type="String", Default="Firewall-Stack")
-dbName = Parameter("DatabaseName", Description="=DatabaseName", Type="String", Default="pocdb")
+dbName = Parameter("DatabaseName", Description="=DatabaseName", Type="String", Default="poc")
 masterUsername = Parameter("MasterUsername", Description="=MasterUsername", Type="String", Default="jack")
 masterUserPassword = Parameter("MasterUserPassword", Description="=MasterUserPassword", Type="String", Default="11223344")
 
