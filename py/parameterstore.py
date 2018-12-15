@@ -1,12 +1,7 @@
 from troposphere import ImportValue, Sub, Template, Parameter, Ref
 from troposphere.secretsmanager import Secret
 
-
-def createSSMParameter(cfname, name, desc, type, value):
-    from troposphere.ssm import Parameter 
-    return Parameter(cfname, Name=name, Description=desc, Type=type, 
-                    Value=value)
-
+import util 
 
 iamStackName = Parameter("IAMStackName", Description="IAMStackName", Type="String", Default="IAM-Stack")
 dbStackName = Parameter("DBStackName", Description="Database Stack Name", Type="String", Default="DB-Stack")
@@ -35,12 +30,12 @@ t.add_parameter(dbStackName)
 t.add_parameter(dbUsername)
 t.add_parameter(dbPassword)
 
-t.add_resource(createSSMParameter("AMYSQLDBHOST", "db-host", "Aurora MySQL Endpoint URL", "String", dbEndpointURL))
-t.add_resource(createSSMParameter("AMYSQLUserName", "db-username", "Aurora MySQL User Name", "String", Ref(dbUsername)))
-t.add_resource(createSSMParameter("AMYSQLDBURL", "db-url", "Aurora MySQL User Name", "String", 
+t.add_resource(util.createSSMParameter("AMYSQLDBHOST", "db-host", "Aurora MySQL Endpoint URL", "String", dbEndpointURL))
+t.add_resource(util.createSSMParameter("AMYSQLUserName", "db-username", "Aurora MySQL User Name", "String", Ref(dbUsername)))
+t.add_resource(util.createSSMParameter("AMYSQLDBURL", "db-url", "Aurora MySQL User Name", "String", 
         "jdbc:mysql://%s:3306/poc?useUnicode=true&characterEncoding=utf8&useLegacyDatetimeCode=false&verifyServerCertificate=true&useSSL=true&requireSSL=true"))
 
-t.add_resource(createSSMParameter("CCEncryptionKeyArn", "cc-encryption-keyarn", "Key Arn for Credit Card encryption", "String", ccEncryptionKeyArn))
+t.add_resource(util.createSSMParameter("CCEncryptionKeyArn", "cc-encryption-keyarn", "Key Arn for Credit Card encryption", "String", ccEncryptionKeyArn))
 
 t.add_resource(dbSecret)
 

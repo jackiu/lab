@@ -67,22 +67,22 @@ dbIngress = SecurityGroupIngress("DBIngress", SourceSecurityGroupId=Ref(appInsta
                                     IpProtocol="TCP", FromPort=MYSQL_PORT, ToPort=MYSQL_PORT, GroupId=Ref(dbSG))
 
 appIngress1 = SecurityGroupIngress("AppIngress1", SourceSecurityGroupId=Ref(appALBSG), Description="App Server Ingress from Internal Application Load Balancer", 
-                                    IpProtocol="TCP", FromPort=8443, ToPort=8443, GroupId=Ref(appInstanceSG))
+                                    IpProtocol="TCP", FromPort=8080, ToPort=8080, GroupId=Ref(appInstanceSG))
 appIngress2 = SecurityGroupIngress("AppIngress2", SourceSecurityGroupId=Ref(bastionHostSG), Description="App Server Ingress from Bastion Host", 
                                     IpProtocol="TCP", FromPort=SSH_PORT, ToPort=SSH_PORT, GroupId=Ref(appInstanceSG))
 appEngress1 = SecurityGroupEgress("AppEngress1", DestinationSecurityGroupId=Ref(dbSG), Description="App Server Egress to DB", 
                                     IpProtocol="TCP", FromPort=MYSQL_PORT, ToPort=MYSQL_PORT, GroupId=Ref(appInstanceSG))
 appEngress2 = SecurityGroupEgress("AppEngress2", DestinationPrefixListId=FindInMap("RegionMap", Ref("AWS::Region"), "PRE"), Description="App Server Egress to S3 Endpoint", 
                                     IpProtocol="TCP", FromPort=HTTPS_PORT, ToPort=HTTPS_PORT, GroupId=Ref(appInstanceSG))
-appEngress3 = SecurityGroupEgress("AppEngress3", CidrIp=everywhereCIDR, Description="App Server Egress to everywhere port 80", 
+appEngress3 = SecurityGroupEgress("AppEngress3", CidrIp=everywhereCIDR, Description="App Server Egress to everywhere port 80 - for YUM", 
                                     IpProtocol="TCP", FromPort=HTTP_PORT, ToPort=HTTP_PORT, GroupId=Ref(appInstanceSG))
 appEngress4 = SecurityGroupEgress("AppEngress4", DestinationSecurityGroupId=Ref(interfaceEndpointSG), Description="App Server Egress to Interface Endpoint", 
                                     IpProtocol="TCP", FromPort=HTTPS_PORT, ToPort=HTTPS_PORT, GroupId=Ref(appInstanceSG))
 
 appALBIngress = SecurityGroupIngress("AppALBIngress", SourceSecurityGroupId=Ref(webInstanceSG), Description="App ALB Ingress from App Instance", 
                                     IpProtocol="TCP", ToPort=HTTPS_PORT, FromPort=HTTPS_PORT, GroupId=Ref(appALBSG))
-appALBEngress = SecurityGroupEgress("AppALBEngress", DestinationSecurityGroupId=Ref(dbSG), Description="App ALB Egress to App Instance", 
-                                    IpProtocol="TCP", FromPort=8443, ToPort=8443, GroupId=Ref(appALBSG))
+appALBEngress = SecurityGroupEgress("AppALBEngress", DestinationSecurityGroupId=Ref(appInstanceSG), Description="App ALB Egress to App Instance", 
+                                    IpProtocol="TCP", FromPort=8080, ToPort=8080, GroupId=Ref(appALBSG))
 
 
 webIngress1 = SecurityGroupIngress("WebIngress1", SourceSecurityGroupId=Ref(webALBSG), Description="Web Server Ingress from Web Application Load Balancer", 
@@ -96,6 +96,12 @@ webEngress1 = SecurityGroupEgress("WebEngress1", DestinationSecurityGroupId=Ref(
 
 webEngress2 = SecurityGroupEgress("WebEngress2", DestinationPrefixListId=FindInMap("RegionMap", Ref("AWS::Region"), "PRE"), Description="Web Server Egress to S3 Endpoint", 
                                     IpProtocol="TCP", FromPort=HTTPS_PORT, ToPort=HTTPS_PORT, GroupId=Ref(webInstanceSG))
+
+webEngress3 = SecurityGroupEgress("WebEngress3", DestinationSecurityGroupId=Ref(interfaceEndpointSG), Description="Web Server Egress to Interface Endpoint", 
+                                    IpProtocol="TCP", FromPort=HTTPS_PORT, ToPort=HTTPS_PORT, GroupId=Ref(webInstanceSG))
+
+webEngress4 = SecurityGroupEgress("WebEngress4", CidrIp=everywhereCIDR, Description="Web Server Egress to everywhere port 80 - for YUM", 
+                                    IpProtocol="TCP", FromPort=HTTP_PORT, ToPort=HTTP_PORT, GroupId=Ref(webInstanceSG))
 
 
 webALBIngress = SecurityGroupIngress("WebALBIngress", CidrIp=everywhereCIDR, Description="Opened Ingress", IpProtocol="TCP", ToPort=HTTPS_PORT, FromPort=HTTPS_PORT, GroupId=Ref(webALBSG))
@@ -115,9 +121,11 @@ bastionHostEngress3 = SecurityGroupEgress("BastionHostEngressS3", DestinationPre
 
 
 
-interfaceEndpointIngress = SecurityGroupIngress("InterfaceEndpointIngress",SourceSecurityGroupId=Ref(appInstanceSG), Description="Interface Endpoint Ingress", 
+interfaceEndpointIngress = SecurityGroupIngress("InterfaceEndpointIngress",SourceSecurityGroupId=Ref(appInstanceSG), Description="Interface Endpoint Ingress for App Tier", 
                                         IpProtocol="TCP", ToPort=HTTPS_PORT, FromPort=HTTPS_PORT, GroupId=Ref(interfaceEndpointSG))
 
+interfaceEndpointIngress2 = SecurityGroupIngress("InterfaceEndpointIngress2",SourceSecurityGroupId=Ref(webInstanceSG), Description="Interface Endpoint Ingress For Web Tier", 
+                                        IpProtocol="TCP", ToPort=HTTPS_PORT, FromPort=HTTPS_PORT, GroupId=Ref(interfaceEndpointSG))
 
 ssmEndPoint=VPCEndpoint("SSMEndPoint", VpcId=vpc, VpcEndpointType="Interface", 
                             SubnetIds=[appPrivateSubnet1, appPrivateSubnet2], 
@@ -160,6 +168,8 @@ t.add_resource(webIngress1)
 t.add_resource(webIngress2)
 t.add_resource(webEngress1)
 t.add_resource(webEngress2)
+t.add_resource(webEngress3)
+t.add_resource(webEngress4)
 t.add_resource(webALBEngress)
 t.add_resource(webALBIngress)
 t.add_resource(bastionHostIngress)
@@ -167,6 +177,8 @@ t.add_resource(bastionHostEngress)
 t.add_resource(bastionHostEngress2)
 t.add_resource(bastionHostEngress3)
 t.add_resource(interfaceEndpointIngress)
+t.add_resource(interfaceEndpointIngress2)
+
 
 t.add_resource(ssmEndPoint)
 t.add_resource(kmsEndPoint)

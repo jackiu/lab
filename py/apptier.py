@@ -10,8 +10,11 @@ from base64 import b64encode
 
 
 import userdata
+import util 
 
 t = Template()
+
+TOMCAT_PORT = 8080
 
 networkingStackName = Parameter("NetworkingStackName", Description="NetworkingStackName", Type="String", Default="Networking-Stack")
 iamStackName = Parameter("IAMStackName", Description="IAMStackName", Type="String", Default="IAM-Stack")
@@ -56,7 +59,7 @@ launchTemplate  = LaunchTemplate("AppInstanceTemplate",
 
 
 appLBTG = TargetGroup("AppLBTG" , Name="AppTierTargetGroup", VpcId=vpc, TargetType="instance", 
-                    Protocol="HTTPS", Port=HTTPS_PORT, HealthCheckPath="/healthcheck")
+                    Protocol="HTTPS", Port=TOMCAT_PORT, HealthCheckPath="/")
 
 appASG = AutoScalingGroup("AppASG", AutoScalingGroupName="AppASG", 
                             VPCZoneIdentifier=[appPrivateSubnet1, appPrivateSubnet2], 
@@ -68,12 +71,9 @@ appASG = AutoScalingGroup("AppASG", AutoScalingGroupName="AppASG",
                             LaunchTemplate=LaunchTemplateSpecification(LaunchTemplateId=Ref(launchTemplate), Version="1")
                         )
 
-appLB = LoadBalancer("AppLB", Name="WebTierLoadBalancer", Scheme="internet-facing", 
+appLB = LoadBalancer("AppLB", Name="AppTierLoadBalancer", Scheme="internal", 
                     SecurityGroups=[appALBSG], Subnets=[webPrivateSubnet1, webPrivateSubnet2], 
                     Type="application") 
-
-
-
 
 appLBListenerAction = Action(Type="forward", TargetGroupArn=Ref(appLBTG))
 
@@ -93,6 +93,9 @@ t.add_resource(appLBTG)
 t.add_resource(appLB)
 t.add_resource(appLBlistener)
 
+
+t.add_resource( util.createSSMParameter("ALBEndpoint", "internal-alb-dnsname", "Internal Load Balancer DNS Name", "String", GetAtt(appLB,"DNSName")) )
+
 t.add_version('2010-09-09')
 
 t.add_description("""\
@@ -101,7 +104,7 @@ AWS CloudFormation BLAH \
 for the AWS resources used if you create a stack from this template.""")
 
 
-t.add_output(Output("EndPointAddress",Value=GetAtt(appLB,"Endpoint.Address"), 
+t.add_output(Output("EndPointAddress",Value=GetAtt(appLB,"DNSName"), 
                 Export=Export(Name(Join("-", [Ref("AWS::StackName"), "EndpointAddress"])))))
 
 
