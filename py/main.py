@@ -34,7 +34,9 @@ t.add_resource(Stack("Bastion", TemplateURL=templateLocation+"bastion.json",
                                 "PubSubnet1": GetAtt("Networking", "Outputs.Subnet1"),
                                 "PubSubnet2": GetAtt("Networking", "Outputs.Subnet2"),
                                 "BastionSG" : GetAtt("Firewall", "Outputs.BastionSG")
-                                }))
+                                }
+                        )
+                )
 t.add_resource(Stack("DBTier", TemplateURL=templateLocation+"db.json",
                         Parameters={
                                 "DatabaseName" : "poc",
@@ -53,7 +55,10 @@ t.add_resource(Stack("ParameterStore", TemplateURL=templateLocation+"parameterst
                                 "DBEndpointURL": GetAtt("DBTier", "Outputs.EndPointAddress"),
                                 "SecretManagerKeyArn" : GetAtt("KMS", "Outputs.SecretManagerKeyArn"),
                                 "CCEncryptionKeyArn" : GetAtt("KMS", "Outputs.CCEncryptionKeyArn"),
-                                }))
+                                },
+                        DependsOn="DBTier"
+                        )
+                )
 
 
 t.add_resource(Stack("AppTier", TemplateURL=templateLocation+"apptier.json",
@@ -67,7 +72,10 @@ t.add_resource(Stack("AppTier", TemplateURL=templateLocation+"apptier.json",
                                 "InstanceProfileArn" : instanceProfileArn,
                                 "AppInstanceSG" : GetAtt("Firewall", "Outputs.AppInstanceSG"),
                                 "AppALBSG" : GetAtt("Firewall", "Outputs.AppALBSG")
-                                }))
+                                },
+                        DependsOn=["DBTier","ParameterStore"]
+                        )
+                )
 
 t.add_resource(Stack("WebTier", TemplateURL=templateLocation+"webtier.json", 
                         Parameters={
@@ -80,7 +88,10 @@ t.add_resource(Stack("WebTier", TemplateURL=templateLocation+"webtier.json",
                                 "InstanceProfileArn" : instanceProfileArn,
                                 "WebInstanceSG" : GetAtt("Firewall", "Outputs.WebInstanceSG"),
                                 "WebALBSG" : GetAtt("Firewall", "Outputs.WebALBSG")
-                                }))
+                                },
+                        DependsOn="AppTier"
+                        )
+                )
 
 file = open('main.json','w')
 file.write(t.to_json())

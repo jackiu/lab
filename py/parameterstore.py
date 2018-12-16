@@ -41,7 +41,7 @@ t.add_resource(util.createSSMParameter("AMYSQLUserName", "db-username", "Aurora 
 t.add_resource(util.createSSMParameter("AMYSQLDBURL", "db-url", "Aurora MySQL User Name", "String", 
         "jdbc:mysql://%s:3306/poc?useUnicode=true&characterEncoding=utf8&useLegacyDatetimeCode=false&verifyServerCertificate=true&useSSL=true&requireSSL=true"))
 
-t.add_resource(util.createSSMParameter("CCEncryptionKeyArn", "cc-encryption-keyarn", "Key Arn for Credit Card encryption", "String", ccEncryptionKeyArn))
+t.add_resource(util.createSSMParameter("CreditCardEncryptionKeyArn", "cc-encryption-keyarn", "Key Arn for Credit Card encryption", "String", ccEncryptionKeyArn))
 
 t.add_resource(dbSecret)
 
