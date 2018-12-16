@@ -16,21 +16,42 @@ t = Template()
 
 TOMCAT_PORT = 8080
 
-networkingStackName = Parameter("NetworkingStackName", Description="NetworkingStackName", Type="String", Default="Networking-Stack")
-iamStackName = Parameter("IAMStackName", Description="IAMStackName", Type="String", Default="IAM-Stack")
-firewallStackName = Parameter("FirewallStackName", Description="=FirewallStackName", Type="String", Default="Firewall-Stack")
+t.add_version('2010-09-09')
+
+t.add_description("""\
+App Tier  \
+**WARNING** This template creates an Amazon EC2 instance. You will be billed \
+for the AWS resources used if you create a stack from this template.""")
+
+
 pubCertArn = Parameter("PubCertARN", Description="Public Cert ARN for Web Application Load Balancer", Type="String", 
                     Default="arn:aws:acm:us-east-2:350032182433:certificate/355f0f79-d86d-4b19-9e0a-a740d9914b83")
 
-vpc = ImportValue(Sub("${NetworkingStackName}-VPCId"))
 
-webPrivateSubnet1 = ImportValue(Sub("${NetworkingStackName}-SubnetId3"))
-webPrivateSubnet2 = ImportValue(Sub("${NetworkingStackName}-SubnetId4"))
-appPrivateSubnet1 = ImportValue(Sub("${NetworkingStackName}-SubnetId5"))
-appPrivateSubnet2 = ImportValue(Sub("${NetworkingStackName}-SubnetId6"))
-instanceProfileArn = ImportValue(Sub("${IAMStackName}-InstanceProfileArn"))
-appInstanceSG = ImportValue(Sub("${FirewallStackName}-AppInstanceSG"))
-appALBSG = ImportValue(Sub("${FirewallStackName}-AppALBSG"))
+vpcParam = Parameter("VPC", Description="VPC ID", Type="AWS::EC2::VPC::Id", Default="")
+vpc = Sub("${VPC}")
+
+webPrivateSubnet1Param = Parameter("SubnetId3", Description="Web Private Subnet 1 ID", Type="AWS::EC2::Subnet::Id", Default="")
+webPrivateSubnet1 = Sub("${SubnetId3}")
+
+webPrivateSubnet2Param = Parameter("SubnetId4", Description="Web Private Subnet 2 ID", Type="AWS::EC2::Subnet::Id", Default="")
+webPrivateSubnet2 = Sub("${SubnetId4}")
+
+appPrivateSubnet1Param = Parameter("SubnetId5", Description="App Private Subnet 1 ID", Type="AWS::EC2::Subnet::Id", Default="")
+appPrivateSubnet1 = Sub("${SubnetId5}")
+
+appPrivateSubnet2Param = Parameter("SubnetId6", Description="App Private Subnet 2 ID", Type="AWS::EC2::Subnet::Id", Default="")
+appPrivateSubnet2 = Sub("${SubnetId6}")
+
+instanceProfileArnParam = Parameter("InstanceProfileArn", Description="Instance Profile Arn", Type="String", Default="arn:aws:iam::350032182433:instance-profile/EC2InstanceProfile")
+instanceProfileArn = Sub("${InstanceProfileArn}")
+
+appInstanceSGParam = Parameter("AppInstanceSG", Description="App Instance SG", Type="AWS::EC2::SecurityGroup::Id", Default="")
+appInstanceSG = Sub("${AppInstanceSG}")
+
+appALBSGParam = Parameter("AppALBSG", Description="App ALB SG", Type="AWS::EC2::SecurityGroup::Id", Default="")
+appALBSG = Sub("${AppALBSG}")
+
 
 
 t.add_mapping('RegionMap', {
@@ -82,10 +103,16 @@ appLBlistener = Listener("AppLBListener" , Certificates=[Certificate(Certificate
                         Port=HTTPS_PORT, Protocol="HTTPS", SslPolicy="ELBSecurityPolicy-FS-2018-06")
 
 
-t.add_parameter(networkingStackName)
-t.add_parameter(iamStackName)
-t.add_parameter(firewallStackName)
+
 t.add_parameter(pubCertArn)
+t.add_parameter(vpcParam)
+t.add_parameter(webPrivateSubnet1Param)
+t.add_parameter(webPrivateSubnet2Param)
+t.add_parameter(appPrivateSubnet1Param)
+t.add_parameter(appPrivateSubnet2Param)
+t.add_parameter(instanceProfileArnParam)
+t.add_parameter(appInstanceSGParam)
+t.add_parameter(appALBSGParam)
 
 t.add_resource(launchTemplate)
 t.add_resource(appASG)
@@ -96,12 +123,6 @@ t.add_resource(appLBlistener)
 
 t.add_resource( util.createSSMParameter("ALBEndpoint", "internal-alb-dnsname", "Internal Load Balancer DNS Name", "String", GetAtt(appLB,"DNSName")) )
 
-t.add_version('2010-09-09')
-
-t.add_description("""\
-AWS CloudFormation BLAH \
-**WARNING** This template creates an Amazon EC2 instance. You will be billed \
-for the AWS resources used if you create a stack from this template.""")
 
 
 t.add_output(Output("EndPointAddress",Value=GetAtt(appLB,"DNSName"), 

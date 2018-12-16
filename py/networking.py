@@ -1,29 +1,37 @@
 from troposphere import Join, Output
-from troposphere import Parameter, Ref, Tags, Template, GetAZs, GetAtt, Select,Export, Name
+from troposphere import Parameter, Ref, Tags, Template, GetAZs, GetAtt, Select,Export, Name, Sub
 from troposphere.ec2 import VPC
 from troposphere.ec2 import Subnet, InternetGateway, VPCGatewayAttachment, NatGateway, VPCEndpoint
 from troposphere.ec2 import EIP, RouteTable, Route, SubnetRouteTableAssociation
 from troposphere.ec2 import SecurityGroupIngress, SecurityGroupEgress, SecurityGroup
-
+from troposphere.constants import QUAD_ZERO
 
 ##################### Define variable #######################
-cidrPrefix = "192.168."
-vpcCIDR = cidrPrefix + "0.0/16"
-everywhereCIDR = "0.0.0.0/0"
+# cidrPrefix = "192.168."
+# vpcCIDR = cidrPrefix + "0.0/16"
 
-subnetCIDR = []
-for i in range(1, 9):
-    subnetCIDR.append( cidrPrefix + str(i) + ".0/24" )
+
+# subnetCIDR = []
+# for i in range(1, 9):
+#     subnetCIDR.append( cidrPrefix + str(i) + ".0/24" )
 
 subnetNames = ["DMZ Tier Subnet 1", "DMZ Tier Subnet 2", "Web Tier Subnet 1", "Web Tier Subnet 2",
                "App Tier Subnet 1", "App Tier Subnet 2", "DB Tier Subnet 1", "DB Tier Subnet 2"]
 
 subnets = []
 
+cidrPrefixParam = Parameter("CIDRPrefix", Description="CIDR block prefix for VPC", Type="String", Default="192.168")
+
 t = Template()
 
+t.add_version('2010-09-09')
 
-vpc = VPC("VPC" , CidrBlock=vpcCIDR, EnableDnsSupport=True, EnableDnsHostnames=True)
+t.add_description("""\
+Networking Stack  \
+Creates VPC, Subnets, IGW, Nat Gatways, Route Table, VPC Endpoint for S3
+""")
+
+vpc = VPC("VPC" , CidrBlock=Sub("${CIDRPrefix}.0.0/16"), EnableDnsSupport=True, EnableDnsHostnames=True)
 
 for i in range(1, 9):
     publicIP = False
@@ -31,7 +39,8 @@ for i in range(1, 9):
         publicIP = True
     subnets.append( Subnet("Subnet" + str(i),
                     VpcId=Ref(vpc), 
-                    CidrBlock = subnetCIDR[i-1],
+                    #CidrBlock = subnetCIDR[i-1],
+                    CidrBlock = Join("", [Sub("${CIDRPrefix}."), str(i-1) , ".0/24"]),
                     Tags = Tags(Application=Ref("AWS::StackName"), Name=subnetNames[i-1]),
                     MapPublicIpOnLaunch=publicIP,
                     AvailabilityZone = Select( ((i+1)%2) , GetAZs("")) ) )
@@ -50,9 +59,9 @@ publicRouteTable = RouteTable("PublicRouteTable", VpcId=Ref(vpc), Tags = Tags(Ap
 privateRouteTable1 = RouteTable("PrivateRouteTable1", VpcId=Ref(vpc), Tags = Tags(Application=Ref("AWS::StackName")))
 privateRouteTable2 = RouteTable("PrivateRouteTable2", VpcId=Ref(vpc), Tags = Tags(Application=Ref("AWS::StackName")))
 
-publicRoute = Route("PublicRoute", DestinationCidrBlock=everywhereCIDR, GatewayId=Ref(igw), RouteTableId=Ref(publicRouteTable))
-privateRoute1 = Route("PrivateRoute1", DestinationCidrBlock=everywhereCIDR, NatGatewayId=Ref(ngw1), RouteTableId=Ref(privateRouteTable1))
-privateRoute2 = Route("PrivateRoute2", DestinationCidrBlock=everywhereCIDR, NatGatewayId=Ref(ngw2), RouteTableId=Ref(privateRouteTable2))
+publicRoute = Route("PublicRoute", DestinationCidrBlock=QUAD_ZERO, GatewayId=Ref(igw), RouteTableId=Ref(publicRouteTable))
+privateRoute1 = Route("PrivateRoute1", DestinationCidrBlock=QUAD_ZERO, NatGatewayId=Ref(ngw1), RouteTableId=Ref(privateRouteTable1))
+privateRoute2 = Route("PrivateRoute2", DestinationCidrBlock=QUAD_ZERO, NatGatewayId=Ref(ngw2), RouteTableId=Ref(privateRouteTable2))
 
 srtas = []
 srtas.append(SubnetRouteTableAssociation("PubRouteTableAsso1", RouteTableId=Ref(publicRouteTable), SubnetId=Ref(subnets[0])))
@@ -72,14 +81,8 @@ vpcEndPoint=VPCEndpoint("S3EndPoint", VpcId=Ref(vpc), RouteTableIds=[Ref(publicR
                             ServiceName=Join("", ["com.amazonaws.", Ref("AWS::Region"), ".s3"]) )
 
 
-t.add_version('2010-09-09')
 
-t.add_description("""\
-AWS CloudFormation BLAH \
-**WARNING** This template creates an Amazon EC2 instance. You will be billed \
-for the AWS resources used if you create a stack from this template.""")
-
-t.add_parameter(Parameter("RandomString", Description="RandomString", Type="String", Default="123"))
+t.add_parameter(cidrPrefixParam)
 
 t.add_resource(vpc)
 
@@ -103,9 +106,9 @@ for s in srtas:
     t.add_resource(s)
 
 
-t.add_output(Output("VPC",Value=Ref(vpc), Export=Export(Name(Join("-", [Ref("AWS::StackName"), "VPCId"])))))
+t.add_output(Output("VPC",Description="Reference to the VPC",Value=Ref(vpc)))
 for idx, subnet in enumerate(subnets):
-    t.add_output(Output("Subnet" + str(idx+1), Value=Ref(subnet), Export=Export(Name(Join("-", [Ref("AWS::StackName"), "SubnetId" + str(idx+1)])))))
+    t.add_output(Output("Subnet" + str(idx+1), Description="Reference to the Subnet",Value=Ref(subnet)))
 
 file = open('networking.json','w')
 file.write(t.to_json())

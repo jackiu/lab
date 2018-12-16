@@ -15,6 +15,13 @@ MYSQL_PORT = 3306
 
 t = Template()
 
+t.add_version('2010-09-09')
+
+t.add_description("""\
+Firewall Stack creates all the security groups, define all the ingress egress rules
+""")
+
+
 t.add_mapping('RegionMap', {
     "us-east-1": {"PRE": "pl-63a5400a"},
     "us-east-2": {"PRE": "pl-7ba54012"},
@@ -26,12 +33,16 @@ t.add_mapping('RegionMap', {
     "ap-northeast-1": {"PRE": "pl-61a54008"}
 })
 
-networkingStackName = Parameter("NetworkingStackName", Description="NetworkingStackName", Type="String", Default="Networking-Stack")
+vpcParam = Parameter("VPC", Description="VPC ID", Type="AWS::EC2::VPC::Id", Default="")
+vpc = Sub("${VPC}")
 
-vpc = ImportValue(Sub("${NetworkingStackName}-VPCId"))
 
-appPrivateSubnet1 = ImportValue(Sub("${NetworkingStackName}-SubnetId5"))
-appPrivateSubnet2 = ImportValue(Sub("${NetworkingStackName}-SubnetId6"))
+appPrivateSubnet1Param = Parameter("SubnetId5", Description="Privat Subnet 5 ID", Type="AWS::EC2::Subnet::Id", Default="")
+appPrivateSubnet1 = Sub("${SubnetId5}")
+
+appPrivateSubnet2Param = Parameter("SubnetId6", Description="Privat Subnet 6 ID", Type="AWS::EC2::Subnet::Id", Default="")
+appPrivateSubnet2 = Sub("${SubnetId6}")
+
 
 dbSG = SecurityGroup( "DBSG", GroupName="DB SG", 
                     GroupDescription="Database Security Group", 
@@ -138,14 +149,12 @@ kmsEndPoint=VPCEndpoint("KMSEndPoint", VpcId=vpc, VpcEndpointType="Interface",
                             ServiceName=Join("", ["com.amazonaws.", Ref("AWS::Region"), ".kms"]) )
 
 
-t.add_version('2010-09-09')
 
-t.add_description("""\
-AWS CloudFormation BLAH \
-**WARNING** This template creates an Amazon EC2 instance. You will be billed \
-for the AWS resources used if you create a stack from this template.""")
 
-t.add_parameter(networkingStackName)
+t.add_parameter(vpcParam)
+t.add_parameter(appPrivateSubnet1Param)
+t.add_parameter(appPrivateSubnet2Param)
+
 # t.add_resource(closeEgress)
 t.add_resource(dbSG)
 t.add_resource(appInstanceSG)
@@ -184,12 +193,12 @@ t.add_resource(ssmEndPoint)
 t.add_resource(kmsEndPoint)
 
 
-t.add_output(Output("WebALBSG",Value=Ref(webALBSG), Export=Export(Name(Join("-", [Ref("AWS::StackName"), "WebALBSG"])))))
-t.add_output(Output("WebInstanceSG",Value=Ref(webInstanceSG), Export=Export(Name(Join("-", [Ref("AWS::StackName"), "WebInstanceSG"])))))
-t.add_output(Output("AppALBSG",Value=Ref(appALBSG), Export=Export(Name(Join("-", [Ref("AWS::StackName"), "AppALBSG"])))))
-t.add_output(Output("AppInstanceSG",Value=Ref(appInstanceSG), Export=Export(Name(Join("-", [Ref("AWS::StackName"), "AppInstanceSG"])))))
-t.add_output(Output("DBSG",Value=Ref(dbSG), Export=Export(Name(Join("-", [Ref("AWS::StackName"), "DBSG"])))))
-t.add_output(Output("BastionSG",Value=Ref(bastionHostSG), Export=Export(Name(Join("-", [Ref("AWS::StackName"), "BastionSG"])))))
+t.add_output(Output("WebALBSG",Value=Ref(webALBSG)))
+t.add_output(Output("WebInstanceSG",Value=Ref(webInstanceSG)))
+t.add_output(Output("AppALBSG",Value=Ref(appALBSG)))
+t.add_output(Output("AppInstanceSG",Value=Ref(appInstanceSG)))
+t.add_output(Output("DBSG",Value=Ref(dbSG)))
+t.add_output(Output("BastionSG",Value=Ref(bastionHostSG)))
 
 file = open('firewall.json','w')
 file.write(t.to_json())

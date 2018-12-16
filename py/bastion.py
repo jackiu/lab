@@ -13,15 +13,34 @@ import userdata
 
 t = Template()
 
-networkingStackName = Parameter("NetworkingStackName", Description="NetworkingStackName", Type="String", Default="Networking-Stack")
-iamStackName = Parameter("IAMStackName", Description="IAMStackName", Type="String", Default="IAM-Stack")
-firewallStackName = Parameter("FirewallStackName", Description="=FirewallStackName", Type="String", Default="Firewall-Stack")
 
-vpc = ImportValue(Sub("${NetworkingStackName}-VPCId"))
-pubSubnetId1 = ImportValue(Sub("${NetworkingStackName}-SubnetId1"))
-pubSubnetId2 = ImportValue(Sub("${NetworkingStackName}-SubnetId2"))
-instanceProfileArn = ImportValue(Sub("${IAMStackName}-InstanceProfileArn"))
-bastionSG = ImportValue(Sub("${FirewallStackName}-BastionSG"))
+t.add_version('2010-09-09')
+
+t.add_description("""\
+Bastion Host \
+**WARNING** This template creates an Amazon EC2 instance. You will be billed \
+for the AWS resources used if you create a stack from this template.""")
+
+
+vpcParam = Parameter("VPC", Description="VPC ID", Type="AWS::EC2::VPC::Id", Default="")
+vpc = Sub("${VPC}")
+
+pubSubnetId1Param = Parameter("PubSubnet1", Description="Public Subnet 1 ID", Type="AWS::EC2::Subnet::Id", Default="")
+pubSubnetId1 = Sub("${PubSubnet1}")
+
+pubSubnetId2Param = Parameter("PubSubnet2", Description="Public Subnet 2 ID", Type="AWS::EC2::Subnet::Id", Default="")
+pubSubnetId2 = Sub("${PubSubnet2}")
+
+instanceProfileArnParam = Parameter("InstanceProfileArn", Description="Instance Profile Arn", Type="String", Default="arn:aws:iam::350032182433:instance-profile/EC2InstanceProfile")
+instanceProfileArn = Sub("${InstanceProfileArn}")
+
+bastionSGParam = Parameter("BastionSG", Description="Bastion SG", Type="AWS::EC2::SecurityGroup::Id", Default="")
+bastionSG = Sub("${BastionSG}")
+
+# pubSubnetId1 = ImportValue(Sub("${NetworkingStackName}-SubnetId1"))
+# pubSubnetId2 = ImportValue(Sub("${NetworkingStackName}-SubnetId2"))
+# instanceProfileArn = ImportValue(Sub("${IAMStackName}-InstanceProfileArn"))
+# bastionSG = ImportValue(Sub("${FirewallStackName}-BastionSG"))
 
 
 t.add_mapping('RegionMap', {
@@ -52,22 +71,17 @@ bastionASG = AutoScalingGroup("BastionASG", AutoScalingGroupName="BastionASG",
                             Tags=[Tag("Name", "BastionHost", True)],
                             LaunchTemplate=LaunchTemplateSpecification(LaunchTemplateId=Ref(bastionLaunchTemplate), Version="1"))
 
-t.add_parameter(networkingStackName)
-t.add_parameter(iamStackName)
-t.add_parameter(firewallStackName)
-
+t.add_parameter(vpcParam)
+t.add_parameter(pubSubnetId1Param)
+t.add_parameter(pubSubnetId2Param)
+t.add_parameter(instanceProfileArnParam)
+t.add_parameter(bastionSGParam)
 
 t.add_resource(bastionLaunchTemplate)
 t.add_resource(bastionASG)
 
 
 
-t.add_version('2010-09-09')
-
-t.add_description("""\
-AWS CloudFormation BLAH \
-**WARNING** This template creates an Amazon EC2 instance. You will be billed \
-for the AWS resources used if you create a stack from this template.""")
 
 
 file = open('bastion.json','w')

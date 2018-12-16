@@ -3,30 +3,36 @@ from troposphere.secretsmanager import Secret
 
 import util 
 
-iamStackName = Parameter("IAMStackName", Description="IAMStackName", Type="String", Default="IAM-Stack")
-dbStackName = Parameter("DBStackName", Description="Database Stack Name", Type="String", Default="DB-Stack")
-
-dbUsername = Parameter("DBUserName", Description="DBUsername", Type="String", Default="jack")
-dbPassword = Parameter("DBPassword", Description="DBPassword", Type="String", Default="11223344")
-
-dbEndpointURL = ImportValue(Sub("${DBStackName}-EndpointAddress"))
-secretManagerKeyArn = ImportValue(Sub("${IAMStackName}-SecretManagerKeyArn"))
-ccEncryptionKeyArn = ImportValue(Sub("${IAMStackName}-CCEncryptionKeyArn"))
-
-dbSecret = Secret("DBSecret", Description="Aurora MySQL Database passowrd", KmsKeyId=secretManagerKeyArn, SecretString=Ref(dbPassword), Name="prod/mysql/creds")
-
 
 t = Template()
 
 t.add_version('2010-09-09')
 
 t.add_description("""\
-AWS CloudFormation BLAH \
+Create Paramters in SSM
 **WARNING** This template creates an Amazon EC2 instance. You will be billed \
 for the AWS resources used if you create a stack from this template.""")
 
-t.add_parameter(iamStackName)
-t.add_parameter(dbStackName)
+
+dbUsername = Parameter("DBUser", Description="DBUsername", Type="String", Default="jack")
+dbPassword = Parameter("DBPassword", Description="DBPassword", Type="String", Default="11223344")
+
+dbEndpointURLParam = Parameter("DBEndpointURL", Description="DB Endpoint URL", Type="String", Default="")
+dbEndpointURL = Sub("${DBEndpointURL}")
+
+secretManagerKeyArnParam = Parameter("SecretManagerKeyArn", Description="Secret Manager Key Arn", Type="String", Default="")
+secretManagerKeyArn = Sub("${SecretManagerKeyArn}")
+
+ccEncryptionKeyArnParam = Parameter("CCEncryptionKeyArn", Description="Credit Card Key Arn URL", Type="String", Default="")
+ccEncryptionKeyArn = Sub("${CCEncryptionKeyArn}")
+
+dbSecret = Secret("DBSecret", Description="Aurora MySQL Database passowrd", 
+                        KmsKeyId=secretManagerKeyArn, SecretString=Ref(dbPassword), Name="prod/mysql/creds")
+
+
+t.add_parameter(dbEndpointURLParam)
+t.add_parameter(secretManagerKeyArnParam)
+t.add_parameter(ccEncryptionKeyArnParam)
 t.add_parameter(dbUsername)
 t.add_parameter(dbPassword)
 

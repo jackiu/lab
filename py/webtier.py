@@ -8,25 +8,44 @@ from troposphere.iam import InstanceProfile, Role
 from troposphere.autoscaling import AutoScalingGroup, Metadata, LaunchTemplateSpecification, Tag
 from base64 import b64encode
 
-
 import userdata
 
 t = Template()
 
-networkingStackName = Parameter("NetworkingStackName", Description="NetworkingStackName", Type="String", Default="Networking-Stack")
-iamStackName = Parameter("IAMStackName", Description="IAMStackName", Type="String", Default="IAM-Stack")
-firewallStackName = Parameter("FirewallStackName", Description="=FirewallStackName", Type="String", Default="Firewall-Stack")
+t.add_version('2010-09-09')
+
+t.add_description("""\
+Create Web Tier Resources \
+**WARNING** This template creates an Amazon EC2 instance. You will be billed \
+for the AWS resources used if you create a stack from this template.""")
+
+
 pubCertArn = Parameter("PubCertARN", Description="Public Cert ARN for Web Application Load Balancer", Type="String", 
                     Default="arn:aws:acm:us-east-2:350032182433:certificate/355f0f79-d86d-4b19-9e0a-a740d9914b83")
 
-vpc = ImportValue(Sub("${NetworkingStackName}-VPCId"))
-pubSubnetId1 = ImportValue(Sub("${NetworkingStackName}-SubnetId1"))
-pubSubnetId2 = ImportValue(Sub("${NetworkingStackName}-SubnetId2"))
-privateSubnetId1 = ImportValue(Sub("${NetworkingStackName}-SubnetId3"))
-privateSubnetId2 = ImportValue(Sub("${NetworkingStackName}-SubnetId4"))
-instanceProfileArn = ImportValue(Sub("${IAMStackName}-InstanceProfileArn"))
-webInstanceSG = ImportValue(Sub("${FirewallStackName}-WebInstanceSG"))
-webALBSG = ImportValue(Sub("${FirewallStackName}-WebALBSG"))
+vpcParam = Parameter("VPC", Description="VPC ID", Type="AWS::EC2::VPC::Id", Default="")
+vpc = Sub("${VPC}")
+
+pubSubnetId1Param = Parameter("SubnetId1", Description="Pub Subnet 1 ID", Type="AWS::EC2::Subnet::Id", Default="")
+pubSubnetId1 = Sub("${SubnetId1}")
+
+pubSubnetId2Param = Parameter("SubnetId2", Description="Pub Subnet 2 ID", Type="AWS::EC2::Subnet::Id", Default="")
+pubSubnetId2 = Sub("${SubnetId2}")
+
+privateSubnetId1Param = Parameter("SubnetId3", Description="Web Private Subnet 1 ID", Type="AWS::EC2::Subnet::Id", Default="")
+privateSubnetId1 = Sub("${SubnetId3}")
+
+privateSubnetId2Param = Parameter("SubnetId4", Description="Web Private Subnet 2 ID", Type="AWS::EC2::Subnet::Id", Default="")
+privateSubnetId2 = Sub("${SubnetId4}")
+
+instanceProfileArnParam = Parameter("InstanceProfileArn", Description="Instance Profile Arn", Type="String", Default="arn:aws:iam::350032182433:instance-profile/EC2InstanceProfile")
+instanceProfileArn = Sub("${InstanceProfileArn}")
+
+webInstanceSGParam = Parameter("WebInstanceSG", Description="Web Instance SG", Type="AWS::EC2::SecurityGroup::Id", Default="")
+webInstanceSG = Sub("${WebInstanceSG}")
+
+webALBSGParam = Parameter("WebALBSG", Description="Web ALB SG", Type="AWS::EC2::SecurityGroup::Id", Default="")
+webALBSG = Sub("${WebALBSG}")
 
 
 t.add_mapping('RegionMap', {
@@ -78,10 +97,16 @@ webLBlistener = Listener("WebLBListener" , Certificates=[Certificate(Certificate
                         Port=HTTPS_PORT, Protocol="HTTPS", SslPolicy="ELBSecurityPolicy-FS-2018-06")
 
 
-t.add_parameter(networkingStackName)
-t.add_parameter(iamStackName)
-t.add_parameter(firewallStackName)
+
 t.add_parameter(pubCertArn)
+t.add_parameter(vpcParam)
+t.add_parameter(pubSubnetId1Param)
+t.add_parameter(pubSubnetId2Param)
+t.add_parameter(privateSubnetId1Param)
+t.add_parameter(privateSubnetId2Param)
+t.add_parameter(instanceProfileArnParam)
+t.add_parameter(webInstanceSGParam)
+t.add_parameter(webALBSGParam)
 
 t.add_resource(lt)
 t.add_resource(webASG)
@@ -89,12 +114,7 @@ t.add_resource(webLBTG)
 t.add_resource(webLB)
 t.add_resource(webLBlistener)
 
-t.add_version('2010-09-09')
 
-t.add_description("""\
-AWS CloudFormation BLAH \
-**WARNING** This template creates an Amazon EC2 instance. You will be billed \
-for the AWS resources used if you create a stack from this template.""")
 
 
 file = open('webtier.json','w')
